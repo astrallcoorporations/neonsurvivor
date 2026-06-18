@@ -4,8 +4,10 @@ import { useState, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import CyberBackground from '@/components/neon/CyberBackground';
 import PlayScreen from '@/components/neon/PlayScreen';
+import { LandingScreen } from '@/components/neon/LandingScreen';
+import { MainMenu } from '@/components/neon/MainMenu';
 import {
-  LandingScreen, MainMenu, StatsScreen, ArsenalScreen, BestiaryScreen,
+  StatsScreen, ArsenalScreen, BestiaryScreen,
   AchievementsScreen, ShopScreen, ClassesScreen, DailyScreen,
   ChallengesScreen, NewsScreen, HowToScreen, SettingsScreen,
 } from '@/components/neon/screens';
@@ -20,15 +22,15 @@ export default function Home() {
   const back = useCallback(() => setScreen('menu'), []);
 
   return (
-    <main className="relative min-h-screen w-full overflow-x-hidden">
+    <main className="relative min-h-screen w-full overflow-x-hidden flex flex-col">
       {/* animated background — hidden during active play to save GPU for the game */}
-      {screen !== 'play' && <CyberBackground intensity={1} />}
+      {screen !== 'play' && <CyberBackground />}
 
       {/* scanlines + vignette overlay */}
       {screen !== 'play' && <div className="neon-scanlines" />}
 
       {/* content */}
-      <div className="relative z-10 min-h-screen flex flex-col">
+      <div className="relative z-10 flex-1 flex flex-col">
         <AnimatePresence mode="wait">
           {screen === 'landing' && (
             <LandingScreen key="landing" onEnter={() => setScreen('menu')} />

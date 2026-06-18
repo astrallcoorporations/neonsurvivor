@@ -122,11 +122,12 @@
 }
 
 /* ============================================================
-   NEON SURVIVOR — CRAZY cyberpunk theme
+   NEON SURVIVOR — v2.1 refined cyberpunk design system
+   Less busy · more cinematic · cohesive tokens
    ============================================================ */
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&display=swap');
 
 :root{
+  /* core palette */
   --neon-cyan:#22e6ff;
   --neon-mag:#ff2bd6;
   --neon-pur:#9b5cff;
@@ -134,111 +135,242 @@
   --neon-grn:#43ff9e;
   --neon-red:#ff3b5c;
   --neon-bg:#05030d;
-  --neon-glass:rgba(10,8,28,.55);
-  --neon-glass-brd:rgba(120,200,255,.28);
+  --neon-bg2:#0a0618;
+  /* surfaces */
+  --neon-glass:rgba(12,9,32,.72);
+  --neon-glass-2:rgba(18,13,44,.85);
+  --neon-brd:rgba(120,200,255,.16);
+  --neon-brd-hi:rgba(120,200,255,.4);
+  /* text */
+  --neon-txt:#e8edff;
+  --neon-txt-dim:rgba(232,237,255,.6);
+  --neon-txt-faint:rgba(232,237,255,.35);
+  /* radii */
+  --r-card:16px;
+  --r-btn:10px;
+  --r-chip:7px;
 }
 
 html,body{
   background:var(--neon-bg);
-  color:#dfe9ff;
+  color:var(--neon-txt);
   font-family:"Rajdhani","Segoe UI",system-ui,sans-serif;
   -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
 }
 
-.font-display{ font-family:"Orbitron",sans-serif; }
+/* ---- typography helpers ---- */
+.font-display{ font-family:"Orbitron",sans-serif; font-weight:700; }
 .font-mono-neon{ font-family:"Share Tech Mono",monospace; }
 .font-body-neon{ font-family:"Rajdhani",sans-serif; }
+.neon-text-glow{ text-shadow:0 0 6px currentColor,0 0 16px currentColor; }
+.neon-text-dim{ color:var(--neon-txt-dim); }
+.neon-text-faint{ color:var(--neon-txt-faint); }
 
-.neon-text-glow{ text-shadow:0 0 6px currentColor,0 0 14px currentColor,0 0 28px currentColor; }
+/* ============================================================
+   SURFACES — refined, less busy
+   ============================================================ */
 
+/* Standard card — clean glass, subtle static border, hover lift.
+   Use this for most content. No animated border (too busy). */
+.neon-card{
+  background:linear-gradient(165deg,var(--neon-glass-2),var(--neon-glass));
+  backdrop-filter:blur(16px);
+  border:1px solid var(--neon-brd);
+  border-radius:var(--r-card);
+  position:relative;
+  transition:transform .2s cubic-bezier(.2,.8,.2,1),border-color .2s,box-shadow .2s;
+}
+.neon-card:hover{
+  border-color:var(--neon-brd-hi);
+  transform:translateY(-3px);
+  box-shadow:0 12px 40px rgba(0,0,0,.5),0 0 24px rgba(34,230,255,.08);
+}
+
+/* Featured/hero card — gets the animated gradient border (used sparingly) */
 .neon-glass{
-  background:linear-gradient(160deg,rgba(16,12,40,.82),rgba(8,6,22,.92));
-  backdrop-filter:blur(14px);
-  border:1px solid var(--neon-glass-brd);
-  border-radius:18px;
+  background:linear-gradient(165deg,var(--neon-glass-2),var(--neon-glass));
+  backdrop-filter:blur(16px);
+  border:1px solid transparent;
+  border-radius:var(--r-card);
   position:relative;
 }
 .neon-glass::before{
-  content:"";position:absolute;inset:0;border-radius:18px;padding:1px;
-  background:linear-gradient(135deg,rgba(34,230,255,.7),rgba(155,92,255,.5),rgba(255,43,214,.6));
+  content:"";position:absolute;inset:0;border-radius:var(--r-card);padding:1px;
+  background:linear-gradient(135deg,rgba(34,230,255,.6),rgba(155,92,255,.4),rgba(255,43,214,.5));
   -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
   -webkit-mask-composite:xor;mask-composite:exclude;
-  pointer-events:none;animation:borderSpin 6s linear infinite;background-size:300% 300%;
+  pointer-events:none;animation:borderSpin 8s linear infinite;background-size:300% 300%;
 }
 @keyframes borderSpin{0%{background-position:0% 50%}100%{background-position:300% 50%}}
 
-.neon-holo-title{
-  background:linear-gradient(90deg,#22e6ff 0%,#9b5cff 35%,#ff2bd6 65%,#ffe24a 100%);
-  background-size:220% 100%;
-  -webkit-background-clip:text;background-clip:text;color:transparent;
-  filter:drop-shadow(0 0 22px rgba(155,92,255,.7)) drop-shadow(0 0 4px rgba(34,230,255,.6));
-  animation:hueShift 8s linear infinite;
+/* Panel — flat dark surface for insets/stats, no border animation */
+.neon-panel{
+  background:rgba(8,6,22,.6);
+  border:1px solid var(--neon-brd);
+  border-radius:12px;
+  backdrop-filter:blur(8px);
 }
-@keyframes hueShift{0%{background-position:0% 50%}100%{background-position:220% 50%}}
 
+/* ============================================================
+   TYPOGRAPHY — display title
+   ============================================================ */
+.neon-holo-title{
+  background:linear-gradient(90deg,#22e6ff 0%,#9b5cff 40%,#ff2bd6 70%,#ffe24a 100%);
+  background-size:200% 100%;
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 24px rgba(155,92,255,.6)) drop-shadow(0 0 6px rgba(34,230,255,.5));
+  animation:hueShift 10s linear infinite;
+}
+@keyframes hueShift{0%{background-position:0% 50%}100%{background-position:200% 50%}}
+
+/* Glitch title — chromatic split on hover */
+.neon-glitch{ position:relative; }
+.neon-glitch::before,.neon-glitch::after{
+  content:attr(data-text);position:absolute;inset:0;
+  background:inherit;-webkit-background-clip:text;background-clip:text;
+}
+.neon-glitch::before{ color:var(--neon-cyan); animation:glitchA 3s infinite linear alternate-reverse; mix-blend-mode:screen; }
+.neon-glitch::after{ color:var(--neon-mag); animation:glitchB 2.5s infinite linear alternate-reverse; mix-blend-mode:screen; }
+@keyframes glitchA{0%,90%,100%{transform:translate(0);opacity:0}92%{transform:translate(-2px,1px);opacity:.7}94%{transform:translate(2px,-1px);opacity:.7}96%{transform:translate(-1px,2px);opacity:.5}}
+@keyframes glitchB{0%,88%,100%{transform:translate(0);opacity:0}90%{transform:translate(2px,-1px);opacity:.7}93%{transform:translate(-2px,1px);opacity:.6}95%{transform:translate(1px,-2px);opacity:.5}}
+
+/* ============================================================
+   BUTTONS — primary / ghost variants
+   ============================================================ */
 .neon-btn{
   position:relative;overflow:hidden;
-  background:linear-gradient(90deg,rgba(34,230,255,.14),rgba(155,92,255,.14));
-  border:1px solid rgba(140,170,255,.35);
-  border-radius:10px;text-transform:uppercase;
+  background:linear-gradient(90deg,rgba(34,230,255,.12),rgba(155,92,255,.12));
+  border:1px solid rgba(140,170,255,.3);
+  border-radius:var(--r-btn);text-transform:uppercase;
   transition:all .18s cubic-bezier(.2,.8,.2,1);
   font-family:"Rajdhani",sans-serif;font-weight:700;letter-spacing:1.5px;
+  color:var(--neon-txt);
 }
 .neon-btn::after{
   content:"";position:absolute;inset:0;
-  background:linear-gradient(120deg,transparent 30%,rgba(255,255,255,.18) 50%,transparent 70%);
+  background:linear-gradient(120deg,transparent 30%,rgba(255,255,255,.16) 50%,transparent 70%);
   transform:translateX(-100%);transition:transform .6s;
 }
 .neon-btn:hover{
   border-color:var(--neon-cyan);
-  box-shadow:0 0 22px rgba(34,230,255,.55),inset 0 0 12px rgba(34,230,255,.15);
-  transform:translateY(-2px);letter-spacing:2.5px;
+  box-shadow:0 0 20px rgba(34,230,255,.45),inset 0 0 10px rgba(34,230,255,.12);
+  transform:translateY(-2px);
 }
 .neon-btn:hover::after{transform:translateX(100%)}
 .neon-btn:active{transform:translateY(0) scale(.98)}
 
+/* Ghost button — minimal, for secondary actions */
+.neon-btn-ghost{
+  background:transparent;
+  border:1px solid var(--neon-brd);
+  color:var(--neon-txt-dim);
+  border-radius:var(--r-btn);
+  transition:all .15s;
+  font-family:"Rajdhani",sans-serif;font-weight:600;letter-spacing:1px;
+  text-transform:uppercase;
+}
+.neon-btn-ghost:hover{
+  border-color:var(--neon-brd-hi);
+  color:var(--neon-txt);
+  background:rgba(34,230,255,.06);
+}
+
+/* ============================================================
+   OVERLAYS — scanlines, grid
+   ============================================================ */
 .neon-scanlines{
   position:fixed;inset:0;z-index:50;pointer-events:none;
-  background:repeating-linear-gradient(0deg,rgba(0,0,0,0) 0,rgba(0,0,0,0) 2px,rgba(0,0,0,.10) 3px,rgba(0,0,0,0) 4px);
-  mix-blend-mode:multiply;opacity:.4;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,0) 0,rgba(0,0,0,0) 2px,rgba(0,0,0,.08) 3px,rgba(0,0,0,0) 4px);
+  mix-blend-mode:multiply;opacity:.35;
 }
 .neon-scanlines::after{
   content:"";position:absolute;inset:0;
-  background:radial-gradient(ellipse at center,rgba(0,0,0,0) 55%,rgba(0,0,0,.55) 100%);
+  background:radial-gradient(ellipse at center,rgba(0,0,0,0) 50%,rgba(0,0,0,.5) 100%);
 }
-@keyframes crtFlick{0%,100%{opacity:.4}50%{opacity:.32}}
-.neon-scanlines{animation:crtFlick 6s infinite}
+@keyframes crtFlick{0%,100%{opacity:.35}50%{opacity:.28}}
+.neon-scanlines{animation:crtFlick 7s infinite}
 
 .neon-grid-bg{
   background-image:
-    linear-gradient(rgba(34,230,255,.07) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(34,230,255,.07) 1px,transparent 1px);
+    linear-gradient(rgba(34,230,255,.05) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(34,230,255,.05) 1px,transparent 1px);
   background-size:48px 48px;
 }
 
-.neon-pulse{ animation:neonPulse 2s infinite; }
-@keyframes neonPulse{0%,100%{opacity:.55}50%{opacity:.9}}
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+.neon-pulse{ animation:neonPulse 2.4s ease-in-out infinite; }
+@keyframes neonPulse{0%,100%{opacity:.55}50%{opacity:1}}
 
-.neon-float{ animation:neonFloat 4s ease-in-out infinite; }
+.neon-float{ animation:neonFloat 5s ease-in-out infinite; }
 @keyframes neonFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 
+.neon-flicker{ animation:neonFlicker 4s infinite; }
+@keyframes neonFlicker{0%,100%{opacity:1}3%{opacity:.4}6%{opacity:1}40%{opacity:1}42%{opacity:.6}44%{opacity:1}}
+
+.neon-sweep{ position:relative;overflow:hidden; }
+.neon-sweep::after{
+  content:"";position:absolute;top:0;left:-100%;width:50%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(34,230,255,.12),transparent);
+  animation:sweep 5s infinite;
+}
+@keyframes sweep{0%{left:-100%}60%,100%{left:200%}}
+
+/* ============================================================
+   SCROLLBAR
+   ============================================================ */
 .neon-scrollbar::-webkit-scrollbar{width:8px;height:8px}
 .neon-scrollbar::-webkit-scrollbar-track{background:rgba(8,6,22,.6)}
 .neon-scrollbar::-webkit-scrollbar-thumb{background:linear-gradient(180deg,var(--neon-cyan),var(--neon-pur));border-radius:4px}
 
-@keyframes glitchTop{0%{transform:translate(0)}20%{transform:translate(-2px,2px)}40%{transform:translate(-2px,-2px)}60%{transform:translate(2px,2px)}80%{transform:translate(2px,-2px)}100%{transform:translate(0)}}
-.neon-glitch:hover{animation:glitchTop .3s infinite}
-
+/* ============================================================
+   PRIMITIVES — chip, bar, divider, stat
+   ============================================================ */
 .neon-chip{
   display:inline-flex;align-items:center;gap:6px;
-  background:rgba(10,8,28,.7);border:1px solid var(--neon-glass-brd);
-  border-radius:7px;padding:4px 10px;font-family:"Share Tech Mono",monospace;
+  background:rgba(10,8,28,.7);border:1px solid var(--neon-brd);
+  border-radius:var(--r-chip);padding:4px 10px;font-family:"Share Tech Mono",monospace;
   font-size:11px;letter-spacing:1px;backdrop-filter:blur(6px);
+  white-space:nowrap;
 }
+.neon-chip-lg{ padding:6px 14px;font-size:13px; }
 
 .neon-bar{
   height:8px;border-radius:6px;background:rgba(0,0,0,.5);overflow:hidden;position:relative;
   box-shadow:inset 0 0 6px rgba(0,0,0,.6);
 }
 .neon-bar>span{display:block;height:100%;transition:width .15s linear}
+
+.neon-divider{
+  height:1px;background:linear-gradient(90deg,transparent,var(--neon-brd-hi),transparent);
+  margin:1rem 0;
+}
+
+/* Section header */
+.neon-section-head{
+  display:flex;align-items:center;gap:12px;margin-bottom:16px;
+}
+.neon-section-head .ico{ font-size:22px; filter:drop-shadow(0 0 8px currentColor); }
+.neon-section-head .lbl{ font-family:"Orbitron",sans-serif;font-weight:700;font-size:18px;letter-spacing:2px; }
+.neon-section-head .sub{ font-family:"Share Tech Mono",monospace;font-size:10px;letter-spacing:2px;opacity:.5;margin-left:auto;text-transform:uppercase; }
+
+/* Boot sequence progress bar */
+.neon-boot-bar{
+  height:3px;background:rgba(34,230,255,.1);border-radius:2px;overflow:hidden;position:relative;
+}
+.neon-boot-bar>span{
+  display:block;height:100%;background:linear-gradient(90deg,var(--neon-cyan),var(--neon-pur));
+  box-shadow:0 0 10px var(--neon-cyan);
+  width:0;transition:width .1s linear;
+}
+
+/* Footer */
+.neon-footer{
+  border-top:1px solid var(--neon-brd);
+  background:rgba(5,3,13,.8);
+  backdrop-filter:blur(8px);
+}
+
 

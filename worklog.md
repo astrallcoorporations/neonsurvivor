@@ -62,3 +62,37 @@ Stage Summary:
   ✓ Mobile responsive (390x844 tested)
   ✓ Lint clean, no console errors, dev server serving 200s
 - The CRAZY redesign is complete: cyberpunk typography, glassmorphism, animated gradient borders, CRT scanlines, holographic title, synthwave grid background, live HUD, persistent meta-progression shared between shell & game
+
+---
+Task ID: 7-12
+Agent: main (Z.ai Code)
+Task: v2.1 polish pass — make WAY better, less sloppy, look way better
+
+Work Log:
+- Rewrote globals.css neon section as refined design system v2.1:
+  - Added design tokens (surfaces, text levels, radii)
+  - Split surfaces: neon-card (clean, hover lift, NO animated border — for most content), neon-glass (animated gradient border — only for featured/hero), neon-panel (flat dark inset)
+  - Added neon-btn-ghost variant for secondary actions
+  - Added primitives: neon-divider, neon-section-head, neon-boot-bar, neon-footer
+  - Added animations: neon-flicker, neon-sweep, real glitch (::before/::after chromatic split)
+  - Refined scanlines (less opaque, slower flicker)
+- Redesigned CyberBackground v2: cinematic synthwave scene with setting sun (gradient + horizontal scanline gaps), mountain silhouette with rim glow, starfield with twinkle, perspective grid floor with fog, drifting embers, horizon glow line
+- Created LandingScreen.tsx: cinematic boot sequence with progress bar filling, cycling status text ("INITIALIZING NEURAL LINK"...), glitch title (chromatic split via data-text + ::before/::after), "ENTER THE GRID" button that appears after boot, keyboard/click to proceed
+- Created MainMenu.tsx: profile sidebar (avatar, credits, prestige/ascension badges, best stats, quick actions) + featured hero mode (large card) + 4 secondary mode cards + clean nav grid (icon+label ghost buttons) + footer
+- Rewrote PlayScreen: FIXED the #1 sloppy issue — removed HUD duplication. Now only shows a brief auto-fading control hint (4s) at run start. Game's own HUD (HP/XP/level/wave/kills/minimap/abilities) is unobstructed. Pause via ESC. Added "ENTERING THE GRID" loading state. Game-over overlay: dramatic with 6-stat grid + credits earned panel
+- Rewrote screens.tsx: all gallery screens use consistent neon-card design with section headers (icon + label + sub), staggered entrance animations, refined stat displays, footers. ScreenShell now has back button + section header pattern
+- Fixed critical CSS bug: @import url(fonts) was invalid inside globals.css (must precede all rules, but Tailwind inlines @import "tailwindcss" first). Moved font loading to <link> tags in layout.tsx <head>. Also moved game HTML fonts to <link> in its <head>
+- Updated page.tsx imports for new LandingScreen/MainMenu separate files
+
+Stage Summary:
+- Verified end-to-end with Agent Browser:
+  ✓ Landing: cinematic boot sequence with progress + glitch title renders
+  ✓ Menu: profile sidebar + featured hero mode + secondary modes + nav grid + footer
+  ✓ Play: game runs, NO HUD duplication (only brief control hint that fades after 4s), game's HUD unobstructed
+  ✓ Keyboard forwarding works (player moves with WASD)
+  ✓ Game-over: dramatic overlay with 6-stat grid + credits, RETURN TO BASE returns to menu
+  ✓ Gallery screens render (Stats/Arsenal verified with correct titles)
+  ✓ Mobile responsive (390x844 tested)
+  ✓ Lint clean (1 benign font warning)
+  ✓ Full flow: land→menu→play→death→gameover→return all verified
+- Key "less sloppy" wins: no more HUD duplication during play, consistent card design system, cinematic boot, profile sidebar, featured mode hero, footers, section headers, refined color tokens, less busy animated borders (only on featured elements)
