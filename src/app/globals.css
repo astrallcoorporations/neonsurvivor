@@ -1,0 +1,244 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --radius: 0.625rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* ============================================================
+   NEON SURVIVOR — CRAZY cyberpunk theme
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&display=swap');
+
+:root{
+  --neon-cyan:#22e6ff;
+  --neon-mag:#ff2bd6;
+  --neon-pur:#9b5cff;
+  --neon-yel:#ffe24a;
+  --neon-grn:#43ff9e;
+  --neon-red:#ff3b5c;
+  --neon-bg:#05030d;
+  --neon-glass:rgba(10,8,28,.55);
+  --neon-glass-brd:rgba(120,200,255,.28);
+}
+
+html,body{
+  background:var(--neon-bg);
+  color:#dfe9ff;
+  font-family:"Rajdhani","Segoe UI",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+
+.font-display{ font-family:"Orbitron",sans-serif; }
+.font-mono-neon{ font-family:"Share Tech Mono",monospace; }
+.font-body-neon{ font-family:"Rajdhani",sans-serif; }
+
+.neon-text-glow{ text-shadow:0 0 6px currentColor,0 0 14px currentColor,0 0 28px currentColor; }
+
+.neon-glass{
+  background:linear-gradient(160deg,rgba(16,12,40,.82),rgba(8,6,22,.92));
+  backdrop-filter:blur(14px);
+  border:1px solid var(--neon-glass-brd);
+  border-radius:18px;
+  position:relative;
+}
+.neon-glass::before{
+  content:"";position:absolute;inset:0;border-radius:18px;padding:1px;
+  background:linear-gradient(135deg,rgba(34,230,255,.7),rgba(155,92,255,.5),rgba(255,43,214,.6));
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;mask-composite:exclude;
+  pointer-events:none;animation:borderSpin 6s linear infinite;background-size:300% 300%;
+}
+@keyframes borderSpin{0%{background-position:0% 50%}100%{background-position:300% 50%}}
+
+.neon-holo-title{
+  background:linear-gradient(90deg,#22e6ff 0%,#9b5cff 35%,#ff2bd6 65%,#ffe24a 100%);
+  background-size:220% 100%;
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 22px rgba(155,92,255,.7)) drop-shadow(0 0 4px rgba(34,230,255,.6));
+  animation:hueShift 8s linear infinite;
+}
+@keyframes hueShift{0%{background-position:0% 50%}100%{background-position:220% 50%}}
+
+.neon-btn{
+  position:relative;overflow:hidden;
+  background:linear-gradient(90deg,rgba(34,230,255,.14),rgba(155,92,255,.14));
+  border:1px solid rgba(140,170,255,.35);
+  border-radius:10px;text-transform:uppercase;
+  transition:all .18s cubic-bezier(.2,.8,.2,1);
+  font-family:"Rajdhani",sans-serif;font-weight:700;letter-spacing:1.5px;
+}
+.neon-btn::after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(120deg,transparent 30%,rgba(255,255,255,.18) 50%,transparent 70%);
+  transform:translateX(-100%);transition:transform .6s;
+}
+.neon-btn:hover{
+  border-color:var(--neon-cyan);
+  box-shadow:0 0 22px rgba(34,230,255,.55),inset 0 0 12px rgba(34,230,255,.15);
+  transform:translateY(-2px);letter-spacing:2.5px;
+}
+.neon-btn:hover::after{transform:translateX(100%)}
+.neon-btn:active{transform:translateY(0) scale(.98)}
+
+.neon-scanlines{
+  position:fixed;inset:0;z-index:50;pointer-events:none;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,0) 0,rgba(0,0,0,0) 2px,rgba(0,0,0,.10) 3px,rgba(0,0,0,0) 4px);
+  mix-blend-mode:multiply;opacity:.4;
+}
+.neon-scanlines::after{
+  content:"";position:absolute;inset:0;
+  background:radial-gradient(ellipse at center,rgba(0,0,0,0) 55%,rgba(0,0,0,.55) 100%);
+}
+@keyframes crtFlick{0%,100%{opacity:.4}50%{opacity:.32}}
+.neon-scanlines{animation:crtFlick 6s infinite}
+
+.neon-grid-bg{
+  background-image:
+    linear-gradient(rgba(34,230,255,.07) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(34,230,255,.07) 1px,transparent 1px);
+  background-size:48px 48px;
+}
+
+.neon-pulse{ animation:neonPulse 2s infinite; }
+@keyframes neonPulse{0%,100%{opacity:.55}50%{opacity:.9}}
+
+.neon-float{ animation:neonFloat 4s ease-in-out infinite; }
+@keyframes neonFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+
+.neon-scrollbar::-webkit-scrollbar{width:8px;height:8px}
+.neon-scrollbar::-webkit-scrollbar-track{background:rgba(8,6,22,.6)}
+.neon-scrollbar::-webkit-scrollbar-thumb{background:linear-gradient(180deg,var(--neon-cyan),var(--neon-pur));border-radius:4px}
+
+@keyframes glitchTop{0%{transform:translate(0)}20%{transform:translate(-2px,2px)}40%{transform:translate(-2px,-2px)}60%{transform:translate(2px,2px)}80%{transform:translate(2px,-2px)}100%{transform:translate(0)}}
+.neon-glitch:hover{animation:glitchTop .3s infinite}
+
+.neon-chip{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(10,8,28,.7);border:1px solid var(--neon-glass-brd);
+  border-radius:7px;padding:4px 10px;font-family:"Share Tech Mono",monospace;
+  font-size:11px;letter-spacing:1px;backdrop-filter:blur(6px);
+}
+
+.neon-bar{
+  height:8px;border-radius:6px;background:rgba(0,0,0,.5);overflow:hidden;position:relative;
+  box-shadow:inset 0 0 6px rgba(0,0,0,.6);
+}
+.neon-bar>span{display:block;height:100%;transition:width .15s linear}
+

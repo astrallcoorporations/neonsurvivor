@@ -1,0 +1,420 @@
+  2080→    notify('CHALLENGE: '+pendingChallenge.name,'var(--mag)');pendingChallenge=null;}
+  2081→};}
+  2082→
+  2083→/* ======================= UPDATE ======================= */
+  2084→function update(rdt){
+  2085→  const sdt=rdt*G.globalSlow;
+  2086→  if(G.slowT>0){G.slowT-=rdt;if(G.slowT<=0)G.globalSlow=1;else G.globalSlow=lerp(G.globalSlow,1,rdt*1.5);}
+  2087→  if(G.enemySlowT>0){G.enemySlowT-=rdt;if(G.enemySlowT<=0)G.enemySlow=1;}
+  2088→  G.gameTime+=sdt;
+  2089→  let ix=0,iz=0;
+  2090→  if(Input.keys['w'])iz-=1; if(Input.keys['s'])iz+=1; if(Input.keys['a'])ix-=1; if(Input.keys['d'])ix+=1;
+  2091→  if(!Coop.active){if(Input.keys['arrowup'])iz-=1;if(Input.keys['arrowdown'])iz+=1;if(Input.keys['arrowleft'])ix-=1;if(Input.keys['arrowright'])ix+=1;}
+  2092→  if(Input.joy.active){ix+=Input.joy.x;iz+=Input.joy.y;}
+  2093→  const il=Math.hypot(ix,iz);if(il>0.05){ix/=il;iz/=il;P.mvx=ix;P.mvz=iz;}else{P.mvx=0;P.mvz=0;}
+  2094→  const wspd=(window.World&&World.weather)?World.weather.playerSpd:1;
+  2095→  if(P.downed){P.vx=0;P.vz=0;}
+  2096→  else if(P.dashT>0){P.dashT-=sdt;P.vx*=0.86;P.vz*=0.86;}
+  2097→  else{const s=P.speed*P.moveMul*wspd;P.vx=(il>0.05?ix*s:0);P.vz=(il>0.05?iz*s:0);}
+  2098→  P.x+=P.vx*sdt;P.z+=P.vz*sdt;P.x=clamp(P.x,-HALF+30,HALF-30);P.z=clamp(P.z,-HALF+30,HALF-30);
+  2099→  let ax,az;
+  2100→  if(document.body.classList.contains('mobile')){const t=Grid.nearest(P.x,P.z,1400);if(t){ax=t.x-P.x;az=t.z-P.z;}else{ax=P.mvx||1;az=P.mvz||0;}}
+  2101→  else{const g=(window.T&&T.ready&&T.screenToGround)?T.screenToGround(Input.mx,Input.my):R.screenToGround(Input.mx,Input.my);ax=g[0]-P.x;az=g[1]-P.z;}
+  2102→  const al=Math.hypot(ax,az)||1;P.aimX=ax/al;P.aimZ=az/al;P.angle=Math.atan2(P.aimZ,P.aimX);
+  2103→  if(Input.mdown||Input.touchFire)P.overdrive=0.12+(P.odBonus||0);else if(P.overdrive>0)P.overdrive-=rdt;
+  2104→  let regen=P.regen+((window.World&&World.weather&&World.weather.regen)?World.weather.regen:0);
+  2105→  P.regenAcc+=regen*sdt;if(P.regenAcc>=1){const add=Math.floor(P.regenAcc);P.regenAcc-=add;if(!P.downed&&add>0)heal(add);}
+  2106→  if(P.invuln>0&&!P.downed)P.invuln-=rdt;
+  2107→  if(!P.abilityCD)P.abilityCD=[];for(let i=0;i<ABILITIES.length;i++)if(P.abilityCD[i]>0)P.abilityCD[i]-=rdt;
+  2108→  if(P.dashCharges<P.dashMax){P.dashRe=(P.dashRe||0)+rdt;if(P.dashRe>1.5){P.dashRe=0;P.dashCharges++;}}
+  2109→  Grid.rebuild();
+  2110→  if(!P.downed)fireWeapon(sdt);
+  2111→  updateWaves(sdt);
+  2112→  updateEnemies(sdt);updateBullets(sdt);updateEBullets(sdt);updateDrones(sdt);updateOrbs(sdt);
+  2113→  updateLoot(sdt);updateParticles(sdt);updateDmgNums(sdt);updateHazards(sdt);updateRings(sdt);updateBeams(sdt);
+  2114→  updateP2(sdt);
+  2115→  if(window.World&&World.update)World.update(sdt,G,P,HALF);
+  2116→  const cut=G.t-2000;while(G.dmgDealtWindow.length&&G.dmgDealtWindow[0][0]<cut)G.dmgDealtWindow.shift();
+  2117→  let sum=0;for(let i=0;i<G.dmgDealtWindow.length;i++)sum+=G.dmgDealtWindow[i][1];G.dps=Math.round(sum/2);
+  2118→  if(G.shake>0){G.shake-=rdt*40;if(G.shake<0)G.shake=0;}
+  2119→  if(G.flashA>0)G.flashA-=rdt*2;
+  2120→  if(Audio.music)Audio.music();
+  2121→  if((G.frame&31)===0&&typeof checkAch==='function')checkAch();
+  2122→  G.frame++;
+  2123→}
+  2124→
+  2125→/* ======================= DRAW (3D) ======================= */
+  2126→function draw(){
+  2127→  const sh=G.shake,shx=rand(-sh,sh),shz=rand(-sh,sh);
+  2128→  const useT=!!(window.T&&T.ready);
+  2129→  if(useT){
+  2130→    T.setCam(P.x,P.z,shx,shz);T.begin();
+  2131→    // sleek dark neon towers (skyline)
+  2132→    if(window.World&&World.buildings){const bs=World.buildings;for(let i=0;i<bs.length;i++){const b=bs[i];
+  2133→      if(Math.abs(b.x-P.x)>5200||Math.abs(b.z-P.z)>5200)continue;const h=220*b.scale;
+  2134→      T.pushNeon('tower',b.x,h*0.5,b.z,55*b.scale,h,55*b.scale,0.06,0.13,0.42,b.rot);}}
+  2135→    // player core
+  2136→    {const wc=(WEAPONS[P.weapon]||{col:[0.3,0.95,1]}).col,pax=Math.cos(P.angle),paz=Math.sin(P.angle),R=P.radius;
+  2137→     const rk=(P.muzzleT||0)/0.07*12;   // recoil kick-back
+  2138→     T.pushNeon('octa',P.x,33,P.z,R*1.55,R*2.0,R*1.55,0.30,0.9,1,G.t*0.0025);          // hull
+  2139→     T.pushNeon('ico',P.x,37,P.z,R*0.9,R*0.9,R*0.9,1,1,1,-G.t*0.004);                    // core
+  2140→     T.pushNeon('box',P.x+pax*(46-rk),30,P.z+paz*(46-rk),92,16,18,wc[0],wc[1],wc[2],-P.angle);     // barrel
+  2141→     T.pushNeon('box',P.x+pax*(22-rk),38,P.z+paz*(22-rk),30,10,26,wc[0]*0.7+0.2,wc[1]*0.7+0.2,wc[2]*0.7+0.2,-P.angle); // receiver
+  2142→     T.pushNeon('octa',P.x+pax*(90-rk),30,P.z+paz*(90-rk),22,22,22,1,1,1,G.t*0.03);      // muzzle
+  2143→     if(P.muzzleT>0){const mf=P.muzzleT/0.07;T.pushNeon('ico',P.x+pax*98,30,P.z+paz*98,28*mf+9,28*mf+9,28*mf+9,1,1,0.75,G.t*0.06);}}
+  2144→    if(Coop.active&&!P2.downed){const a2=Math.cos(P2.angle),z2=Math.sin(P2.angle);
+  2145→     T.pushNeon('octa',P2.x,33,P2.z,P2.radius*1.5,P2.radius*1.9,P2.radius*1.5,0.3,1,0.5,G.t*0.003);
+  2146→     T.pushNeon('box',P2.x+a2*44,30,P2.z+z2*44,84,14,16,0.4,1,0.6,-P2.angle);}
+  2147→    // enemies as glowing neon shapes (shape by type, color by faction)
+  2148→    for(let i=0;i<enemies.length;i++){const e=enemies[i];let cr=e.cr,cg=e.cg,cb=e.cb;if(e.flash>0){cr=1;cg=1;cb=1;}
+  2149→      if(e.boss){const br=e.radius;
+  2150→        T.pushNeon('box',e.x,br*1.0,e.z,br*2.0,br*2.0,br*2.0,cr*0.55,cg*0.55,cb*0.55,e.spin*0.4);
+  2151→        T.pushNeon('ico',e.x,br*1.35,e.z,br*1.7,br*1.7,br*1.7,cr,cg,cb,-e.spin);
+  2152→        T.pushNeon('octa',e.x,br*2.3,e.z,br*0.85,br*1.15,br*0.85,1,1,1,e.spin*2.2);
+  2153→        for(let k=0;k<6;k++){const a=e.spin*1.4+k/6*TWO_PI;T.pushNeon('octa',e.x+Math.cos(a)*br*1.75,br*1.0,e.z+Math.sin(a)*br*1.75,br*0.55,br*0.55,br*0.55,cr,cg,cb,a);}
+  2154→      } else {const s=e.radius*1.35;T.pushNeon(e.mesh,e.x,e.radius,e.z,s,s,s,cr,cg,cb,e.spin||0);}}
+  2155→    // drones
+  2156→    for(let i=0;i<drones.length;i++){const dr=drones[i];const c=dr.def.col;T.pushNeon('octa',dr.x,dr.y||40,dr.z,15,15,15,c[0],c[1],c[2],dr.ang||0);}
+  2157→    // loot gems
+  2158→    for(let i=0;i<loots.length;i++){const l=loots[i];const c=hex3(RAR[l.rar].c);T.pushNeon('octa',l.x,l.y||22,l.z,14,20,14,c[0],c[1],c[2],l.t||0);}
+  2159→    for(let i=0;i<bullets.length;i++){const b=bullets[i];const z=(b.size||10);T.pushNeon('box',b.x,24,b.z,z*2.6,z*0.9,z*1.0,b.r,b.g,b.b,-(b.ang||0));}
+  2160→    for(let i=0;i<ebullets.length;i++){const b=ebullets[i];const z=(b.size||10);T.pushNeon('octa',b.x,24,b.z,z*1.6,z*1.6,z*1.6,b.r,b.g,b.b,b.spin||0);}
+  2161→    T.render();
+  2162→  } else { drawR(shx,shz); }
+  2163→  drawFX();
+  2164→  drawMinimap();
+  2165→}
+  2166→function drawR(shx,shz){
+  2167→  R.setCam(P.x,P.z,shx,shz);R.begin();
+  2168→  const pulse=0.5+Math.sin(G.t*0.006)*0.2+(P.invuln>0?0.5:0);
+  2169→  R.push('sphere',P.x,P.y,P.z,P.radius*2.2,P.radius*2.2,P.radius*2.2,P.downed?0.6:1,P.downed?0.2:1,P.downed?0.3:1,pulse,0);
+  2170→  const w=curWeapon();R.push('cube',P.x+P.aimX*34,26,P.z+P.aimZ*34,64,14,14,w.col[0],w.col[1],w.col[2],1.1,P.angle);
+  2171→  if(Coop.active&&!P2.downed)R.push('sphere',P2.x,P2.y,P2.z,P2.radius*2.1,P2.radius*2.1,P2.radius*2.1,0.3,1,0.5,0.7,0);
+  2172→  for(let i=0;i<enemies.length;i++){const e=enemies[i];let s=e.radius*1.9;
+  2173→    let em=e.flash>0?2.8:(e.boss?1.0+Math.sin(G.t*0.01)*0.3:0.5);if(e.boss)s*=1+Math.sin(G.t*0.005)*0.04;if(e.elite&&!e.boss)em+=0.4;
+  2174→    R.push(e.mesh,e.x,e.y,e.z,s,s,s,e.cr,e.cg,e.cb,em,e.spin);}
+  2175→  for(let i=0;i<drones.length;i++){const dr=drones[i];const c=dr.def.col;R.push(dr.def.mesh||'cube',dr.x,dr.y||40,dr.z,26,26,26,c[0],c[1],c[2],1,dr.ang||0);}
+  2176→  for(let i=0;i<loots.length;i++){const l=loots[i];const c=hex3(RAR[l.rar].c);R.push('cube',l.x,l.y||20,l.z,30,30,30,c[0],c[1],c[2],1.4,l.t||0);}
+  2177→  R.render();
+  2178→}
+  2179→
+  2180→/* ======================= DRAW (2D FX OVERLAY) ======================= */
+  2181→function drawFX(){
+  2182→  const ctx=FX.ctx;if(!ctx)return;ctx.clearRect(0,0,FX.W,FX.H);
+  2183→  // particles
+  2184→  for(let i=0;i<particles.length;i++){const p=particles[i];const c=FX.project(p.x,p.z);if(!c)continue;const a=clamp(p.life/p.max,0,1);
+  2185→    ctx.fillStyle='rgba('+(p.r*255|0)+','+(p.g*255|0)+','+(p.b*255|0)+','+a+')';const s=Math.max(1,p.size*a*0.5);ctx.fillRect(c[0]-s/2,c[1]-s/2,s,s);}
+  2186→  // (projectiles now render as 3D neon tracers in the scene)
+  2187→  ctx.shadowBlur=0;
+  2188→  // orbs
+  2189→  ctx.fillStyle='rgba(34,230,255,.85)';for(let i=0;i<orbs.length;i++){const o=orbs[i];const c=FX.project(o.x,o.z);if(!c)continue;ctx.fillRect(c[0]-2,c[1]-2,4,4);}
+  2190→  // rings
+  2191→  for(let i=0;i<rings.length;i++){const r=rings[i];const c=FX.project(r.x,r.z);if(!c)continue;const e=FX.project(r.x+r.r,r.z);
+  2192→    const rad=e?Math.abs(e[0]-c[0]):r.r*0.3;const a=r.life/r.maxlife;
+  2193→    ctx.strokeStyle='rgba('+(r.r0*255|0)+','+(r.g0*255|0)+','+(r.b0*255|0)+','+(a*0.8)+')';ctx.lineWidth=Math.max(2,8*a);
+  2194→    ctx.beginPath();ctx.arc(c[0],c[1],rad,0,TWO_PI);ctx.stroke();}
+  2195→  // hazards
+  2196→  for(let i=0;i<hazards.length;i++){const h=hazards[i];const c=FX.project(h.x,h.z);if(!c)continue;const e=FX.project(h.x+h.max,h.z);
+  2197→    const rad=e?Math.abs(e[0]-c[0]):60;const g=ctx.createRadialGradient(c[0],c[1],0,c[0],c[1],rad);
+  2198→    g.addColorStop(0,'rgba('+(h.r0*255|0)+','+(h.g0*255|0)+','+(h.b0*255|0)+',0.5)');g.addColorStop(1,'rgba(0,0,0,0)');
+  2199→    ctx.fillStyle=g;ctx.beginPath();ctx.arc(c[0],c[1],rad,0,TWO_PI);ctx.fill();}
+  2200→  // beams
+  2201→  ctx.lineCap='round';ctx.shadowBlur=18;
+  2202→  for(let i=0;i<beams.length;i++){const b=beams[i];const s=FX.project(b.x,b.z);if(!s)continue;
+  2203→    let ex,ez;if(b.seg){ex=b.x+b.ax;ez=b.z+b.az;}else{ex=b.x+b.ax*(b.range||700);ez=b.z+b.az*(b.range||700);}
+  2204→    const e=FX.project(ex,ez);if(!e)continue;const a=b.life/b.max;
+  2205→    ctx.strokeStyle='rgba('+(b.r*255|0)+','+(b.g*255|0)+','+(b.b*255|0)+','+a+')';ctx.shadowColor=ctx.strokeStyle;
+  2206→    ctx.lineWidth=(b.wd?b.wd*0.5:(b.big?22:8))*a+2;ctx.beginPath();ctx.moveTo(s[0],s[1]);ctx.lineTo(e[0],e[1]);ctx.stroke();}
+  2207→  ctx.shadowBlur=0;
+  2208→  // damage numbers
+  2209→  ctx.textAlign='center';
+  2210→  for(let i=0;i<dmgnums.length;i++){const d=dmgnums[i];const c=FX.project(d.x,d.z);if(!c)continue;const a=clamp(d.life/d.max,0,1);
+  2211→    const y=c[1]-d.y*0.5;ctx.font='900 '+(d.crit?26:16)+'px Segoe UI,sans-serif';
+  2212→    ctx.fillStyle=d.crit?'rgba(255,210,74,'+a+')':'rgba(255,255,255,'+a+')';ctx.lineWidth=3;ctx.strokeStyle='rgba(0,0,0,'+(a*0.7)+')';
+  2213→    const tx=d.crit?'✦'+d.v:''+d.v;ctx.strokeText(tx,c[0],y);ctx.fillText(tx,c[0],y);}
+  2214→  // black market marker
+  2215→  if(window.World&&World.blackMarket){const c=FX.project(World.blackMarket.x,World.blackMarket.z);if(c){ctx.fillStyle='rgba(255,43,214,.9)';
+  2216→    ctx.font='900 14px Segoe UI';ctx.fillText('☠ MARKET (B)',c[0],c[1]-30);}}
+  2217→  // co-op P2 marker
+  2218→  if(Coop.active){const c=FX.project(P2.x,P2.z);if(c){
+  2219→    ctx.strokeStyle=P2.downed?'#ff3b5c':'#43ff9e';ctx.lineWidth=2;ctx.beginPath();ctx.arc(c[0],c[1],P2.downed?22:16,0,TWO_PI);ctx.stroke();
+  2220→    ctx.fillStyle=P2.downed?'#ff3b5c':'#43ff9e';ctx.font='900 12px Segoe UI';ctx.fillText(P2.downed?'REVIVE P2':'P2',c[0],c[1]-26);}}
+  2221→  if(P.downed){const c=FX.project(P.x,P.z);if(c){ctx.fillStyle='#ff3b5c';ctx.font='900 14px Segoe UI';ctx.fillText('DOWNED — P2 REVIVE',c[0],c[1]-30);}}
+  2222→  // weather wash
+  2223→  if(window.World&&World.weather&&World.weather.id!=='clear'){const t=World.weather.tint;
+  2224→    ctx.fillStyle='rgba('+(t[0]*255|0)+','+(t[1]*255|0)+','+(t[2]*255|0)+',0.07)';ctx.fillRect(0,0,FX.W,FX.H);
+  2225→    if(World.weather.id==='rain'){ctx.strokeStyle='rgba(120,255,160,0.12)';ctx.lineWidth=1;
+  2226→      for(let i=0;i<40;i++){const x=(i*97+(G.t*0.6))%FX.W;ctx.beginPath();ctx.moveTo(x,(i*53)%FX.H);ctx.lineTo(x-6,((i*53)%FX.H)+18);ctx.stroke();}}}
+  2227→  // subtle day/night
+  2228→  const nA=(Math.sin(G.gameTime*0.02)*0.5+0.5)*0.16;ctx.fillStyle='rgba(8,10,40,'+nA+')';ctx.fillRect(0,0,FX.W,FX.H);
+  2229→  // hit flash
+  2230→  if(G.flashA>0&&G.flashColor){ctx.fillStyle='rgba('+(G.flashColor[0]*255|0)+','+(G.flashColor[1]*255|0)+','+(G.flashColor[2]*255|0)+','+(G.flashA*0.4)+')';ctx.fillRect(0,0,FX.W,FX.H);}
+  2231→  // low hp vignette
+  2232→  if(P.hp/P.maxhp<0.3&&G.running){const p=0.3+Math.sin(G.t*0.01)*0.2;const g=ctx.createRadialGradient(FX.W/2,FX.H/2,FX.H*0.3,FX.W/2,FX.H/2,FX.H*0.7);
+  2233→    g.addColorStop(0,'rgba(255,0,40,0)');g.addColorStop(1,'rgba(255,0,40,'+(p*0.5)+')');ctx.fillStyle=g;ctx.fillRect(0,0,FX.W,FX.H);}
+  2234→}
+  2235→
+  2236→/* ======================= LOOP + BOOT ======================= */
+  2237→let _last=0;
+  2238→function frame(ts){
+  2239→  requestAnimationFrame(frame);G.t=ts;let dt=(ts-_last)/1000;_last=ts;if(dt>0.05)dt=0.05;if(dt<=0)dt=0.016;
+  2240→  if(G.running&&!G.paused&&!G.over&&!G.levelOpen)update(dt);
+  2241→  if(G.running||G.over)draw();
+  2242→  if(G.running&&typeof updateHUD==='function')updateHUD();
+  2243→  const fc=document.getElementById('fpsc');if(fc)fc.textContent=Math.round(1/dt)+' FPS · '+enemies.length+' enemies';
+  2244→}
+  2245→function wireUI(){
+  2246→  const on=(id,fn)=>{const e=document.getElementById(id);if(e)e.onclick=fn;};
+  2247→  on('shopBtn',()=>{buildShop();openScreen('shop');});on('shopClose',()=>closeScreen('shop'));
+  2248→  on('classBtn',()=>{buildClasses();openScreen('classes');});on('classClose',()=>closeScreen('classes'));
+  2249→  on('dailyBtn',()=>{buildDaily();openScreen('daily');});on('dailyClose',()=>closeScreen('daily'));
+  2250→  on('dailyClaim',()=>{const r=window.Meta?Meta.claimDailyRewards():0;notify(r>0?('+'+r+' credits'):'Nothing to claim',r>0?'var(--grn)':'var(--red)');refreshMetaUI();buildDaily();});
+  2251→  on('challengeBtn',()=>{buildChallenges();openScreen('challenges');});on('challengeClose',()=>closeScreen('challenges'));
+  2252→  on('prestigeBtn',()=>{if(!window.Meta)return;
+  2253→    if(Meta.canAscend()&&confirm('ASCEND? Resets prestige levels for a permanent global bonus.')){Meta.doAscend();notify('ASCENDED','var(--yel)');}
+  2254→    else{const ok=Meta.doPrestige({gameTime:G.gameTime||0,level:P.level||1});if(ok)notify('PRESTIGE! +'+ok+' credits','var(--yel)');else notify('Need a run reaching LV20 or 5 min first','var(--red)');}
+  2255→    refreshMetaUI();});
+  2256→  on('howBtn',()=>alert('NEON SURVIVOR — THE VIRUS WAR\\n\\nP1: WASD move · mouse aim · auto-fire · L-click overdrive · Space dash · 1-9 abilities · Q/E weapon · T skill tree · Esc pause.\\nLOCAL CO-OP: press G during a run to add Player 2 (Arrow keys, auto-fire). Stand close to revive a downed teammate.\\nPress B at a Black Market to trade.\\n\\nEarn credits, buy unlocks in the SHOP, pick a CLASS, complete DAILIES, take on CHALLENGES, and PRESTIGE to grow permanently stronger. Progress saves automatically; CLEAR DATA wipes it.'));
+  2257→  on('resumeBtn',()=>togglePause());
+  2258→  on('treeBtn2',()=>{closeScreen('pause');renderTree();openScreen('skilltree');});
+  2259→  on('quitBtn',()=>{G.running=false;G.over=false;G.paused=false;closeScreen('pause');openScreen('menu');refreshMetaUI();});
+  2260→  on('treeClose',()=>toggleTree());
+  2261→  on('retryBtn',()=>{closeScreen('gameover');openScreen('menu');refreshMetaUI();});
+  2262→  on('bmClose',()=>{closeScreen('blackmarket');G.paused=false;});
+  2263→  addEventListener('keydown',e=>{if(e.key.toLowerCase()==='g'&&G.running)toggleCoop();});
+  2264→}
+  2265→function injectUI(){
+  2266→  const css=document.createElement('style');
+  2267→  css.textContent='#p2hud{position:absolute;left:14px;top:150px;z-index:4;font-size:12px;background:rgba(8,6,24,.7);padding:4px 8px;border-radius:6px;border:1px solid rgba(67,255,158,.4)}'+
+  2268→    '.classgrid,.shopgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;max-height:54vh;overflow:auto}';
+  2269→  document.head.appendChild(css);
+  2270→  const menuCard=document.querySelector('#menu .card');
+  2271→  if(menuCard){const row=document.createElement('div');row.className='row';row.style.marginTop='8px';
+  2272→    const cb=document.createElement('button');cb.className='btn';cb.style.cssText='width:auto;padding:8px 14px;font-size:11px';
+  2273→    cb.textContent='CO-OP (press G in-run)';cb.onclick=()=>alert('Local co-op: start a run, then press G to add Player 2 (Arrow keys). Revive downed teammates by standing close.\\n\\nOnline multiplayer/matchmaking needs a server and is not part of this single-folder offline build.');
+  2274→    const wb=document.createElement('button');wb.className='btn';wb.style.cssText='width:auto;padding:8px 14px;font-size:11px;border-color:#ff3b5c;color:#ffb3c0';
+  2275→    wb.textContent='CLEAR DATA';wb.onclick=()=>{if(confirm('Erase ALL saved progress (credits, unlocks, classes, prestige, dailies)?'))clearAllData();};
+  2276→    row.appendChild(cb);row.appendChild(wb);menuCard.appendChild(row);}
+  2277→}
+  2278→function startEngine(){
+  2279→  try{R.init();}catch(e){console.warn('WebGL2 fallback renderer unavailable',e);}
+  2280→  FX.init();
+  2281→  if(typeof setupInput==='function')setupInput();
+  2282→  buildModeButtons();wireUI();injectUI();refreshMetaUI();
+  2283→  if(typeof updateHUD==='function'){const _uh=updateHUD;updateHUD=function(){_uh();paintCooldowns();};}
+  2284→  try{R.setCam(P.x,P.z,0,0);}catch(e){}
+  2285→  requestAnimationFrame(frame);
+  2286→}
+  2287→window.onGraphicsReady=function(){
+  2288→  if(window.T&&T.ready){const gc=document.getElementById('glcanvas');if(gc)gc.style.display='none';
+  2289→    if(T.setDistrict&&window.World)T.setDistrict(World.district||0);notify('3D MODELS LOADED','var(--cyan)');}
+  2290→};
+  2291→
+  2292→/* ============================================================================
+  2293→   200-ITEM COLLECTION SYSTEM  (stacking passives + procs, drops, inventory,
+  2294→   localStorage discovery). Additive: hooks via function wrapping.
+  2295→   ============================================================================ */
+  2296→const ITEM_RAR={
+  2297→  common:{n:'COMMON',c:'#b8c4d8',w:34},uncommon:{n:'UNCOMMON',c:'#43ff9e',w:24},
+  2298→  rare:{n:'RARE',c:'#3aa0ff',w:16},epic:{n:'EPIC',c:'#b15cff',w:10},
+  2299→  legendary:{n:'LEGENDARY',c:'#ffb347',w:5},mythic:{n:'MYTHIC',c:'#ff3b8e',w:2},ancient:{n:'ANCIENT',c:'#9efffb',w:0.8}
+  2300→};
+  2301→const RKEYS=['common','uncommon','rare','epic','legendary','mythic','ancient'];
+  2302→function ridx(r){return RKEYS.indexOf(r)+1;}
+  2303→const ITEMS=[];
+  2304→function defItem(id,name,rar,icon,desc,fn){ITEMS.push({id,name,rar,icon,desc,fn});}
+  2305→
+  2306→/* ---- curated signature items (real, distinct effects) ---- */
+  2307→defItem('glassreactor','Glass Reactor','epic','💥','+45% damage, -20% max HP',p=>{p.dmgMul*=1.45;p.maxhp*=0.8;p.hp=Math.min(p.hp,p.maxhp);});
+  2308→defItem('soulstone','Soulstone','legendary','💚','Heal 4 HP on every kill',p=>{p.procs.onKillHeal+=4;});
+  2309→defItem('detonator','Detonation Core','rare','🧨','Kills have a chance to explode',p=>{p.procs.onKillExplode+=1;});
+  2310→defItem('chaincap','Chain Capacitor','rare','🔗','Hits chain lightning to nearby foes',p=>{p.procs.chainHit+=1;});
+  2311→defItem('orbblades','Orbital Blades','epic','🌀','Summons orbiting blades',p=>{p.procs.orbitBlades+=2;});
+  2312→defItem('vampedge','Vampiric Edge','rare','🩸','+9% lifesteal',p=>{p.lifesteal+=0.09;});
+  2313→defItem('hyperboots','Hyperloop Boots','uncommon','👟','+28% move speed',p=>{p.moveMul*=1.28;});
+  2314→defItem('nanoforge','Nano Forge','mythic','⚙️','+30% dmg, +20% rate, +8% crit',p=>{p.dmgMul*=1.3;p.fireRateMul*=1.2;p.crit=Math.min(0.95,p.crit+0.08);});
+  2315→defItem('singularity','Singularity Shard','ancient','🌌','+60% dmg, +1 projectile, kills explode',p=>{p.dmgMul*=1.6;p.projAdd+=1;p.procs.onKillExplode+=2;});
+  2316→defItem('berserkchip','Berserker Chip','epic','😡','+30% dmg & rate below 40% HP',p=>{p.berserk=true;p.dmgMul*=1.05;});
+  2317→defItem('titancore','Titan Core','legendary','🛡️','+120 HP, +8 armor',p=>{p.maxhp+=120;p.hp+=120;p.armor+=8;});
+  2318→defItem('reactorheart','Reactor Heart','epic','❤️‍🔥','+2.5 regen/s, +40 HP',p=>{p.regen+=2.5;p.maxhp+=40;p.hp+=40;});
+  2319→defItem('overclock','Overclock Module','rare','⚡','+22% fire rate',p=>{p.fireRateMul*=1.22;});
+  2320→defItem('railspike','Rail Spikes','rare','📌','+2 pierce',p=>{p.pierceAdd+=2;});
+  2321→defItem('splitcore','Split Core','epic','✳️','+1 projectile',p=>{p.projAdd+=1;});
+  2322→defItem('multicore','Multiplex Core','legendary','✴️','+2 projectiles',p=>{p.projAdd+=2;});
+  2323→defItem('critlens','Assassin Lens','epic','🎯','+12% crit, +50% crit dmg',p=>{p.crit=Math.min(0.95,p.crit+0.12);p.critDmg+=0.5;});
+  2324→defItem('bigboom','Ordnance Pack','uncommon','💣','+35% explosion radius',p=>{p.explodeMul*=1.35;});
+  2325→defItem('dronehive','Drone Hive','rare','🛰️','+40% drone damage',p=>{p.droneDmgMul*=1.4;});
+  2326→defItem('arcbattery','Arc Battery','rare','🔮','-22% ability cooldown',p=>{p.abilityCDmul=(p.abilityCDmul||1)*0.78;});
+  2327→defItem('voidcell','Void Cell','epic','🕳️','+35% ability power',p=>{p.abilityMul*=1.35;});
+  2328→defItem('phasecoil','Phase Coil','rare','💨','+1 dash charge',p=>{p.dashMax++;p.dashCharges++;});
+  2329→defItem('magcore','Magnetar','uncommon','🧲','+40% pickup range',p=>{p.pickupBonus+=0.4;});
+  2330→defItem('scholarchip','Scholar Chip','uncommon','📘','+25% XP gain',p=>{p.xpMul*=1.25;});
+  2331→defItem('luckydie','Loaded Dice','uncommon','🍀','+4 luck',p=>{p.luck+=4;});
+  2332→defItem('spikehull','Spiked Hull','uncommon','🌵','+12 thorns',p=>{p.thorns+=12;});
+  2333→defItem('aegis','Aegis Plate','rare','🪖','+6 armor, +30 HP',p=>{p.armor+=6;p.maxhp+=30;p.hp+=30;});
+  2334→defItem('velocity','Velocity Drive','common','🌠','+18% projectile speed',p=>{p.projSpeedMul*=1.18;});
+  2335→defItem('adrenal','Adrenal Surge','rare','🔥','+12% move & fire rate',p=>{p.moveMul*=1.12;p.fireRateMul*=1.12;});
+  2336→defItem('heavyrnd','Heavy Rounds','uncommon','🗡️','+20% dmg, -8% rate',p=>{p.dmgMul*=1.2;p.fireRateMul*=0.92;});
+  2337→defItem('secondwind','Second Wind','rare','🌬️','+2 regen, +35 HP',p=>{p.regen+=2;p.maxhp+=35;p.hp+=35;});
+  2338→defItem('predator','Predator Optics','epic','👁️','+9% crit, +20% dmg',p=>{p.crit=Math.min(0.95,p.crit+0.09);p.dmgMul*=1.2;});
+  2339→defItem('warpdrive','Warp Drive','epic','🌀','+1 dash, +18% move, dash i-frames',p=>{p.dashMax++;p.dashCharges++;p.moveMul*=1.18;p.dashInv=(p.dashInv||0)+0.12;});
+  2340→defItem('reaper','Reaper Protocol','legendary','☠️','Kills heal & may explode',p=>{p.procs.onKillHeal+=3;p.procs.onKillExplode+=1;});
+  2341→defItem('stormcell','Storm Cell','legendary','🌩️','Strong chain lightning on hit',p=>{p.procs.chainHit+=2;});
+  2342→defItem('bladestorm','Bladestorm','mythic','🌀','+4 orbiting blades',p=>{p.procs.orbitBlades+=4;});
+  2343→defItem('godcore','Omega Core','ancient','🔱','+50% dmg, +30% rate, +6 orbit blades',p=>{p.dmgMul*=1.5;p.fireRateMul*=1.3;p.procs.orbitBlades+=6;});
+  2344→defItem('bloodpact','Blood Pact','mythic','🧛','+15% lifesteal, +25% dmg, -25% HP',p=>{p.lifesteal+=0.15;p.dmgMul*=1.25;p.maxhp*=0.75;p.hp=Math.min(p.hp,p.maxhp);});
+  2345→defItem('fortress','Fortress Matrix','mythic','🏰','+150 HP, +12 armor, +15 thorns',p=>{p.maxhp+=150;p.hp+=150;p.armor+=12;p.thorns+=15;});
+  2346→defItem('quantumtether','Quantum Tether','legendary','🪢','+2 projectiles, +1 pierce, +15% rate',p=>{p.projAdd+=2;p.pierceAdd+=1;p.fireRateMul*=1.15;});
+  2347→defItem('infinitymag','Infinity Mag','ancient','♾️','+40% rate, +1 proj, -30% ability cd',p=>{p.fireRateMul*=1.4;p.projAdd+=1;p.abilityCDmul=(p.abilityCDmul||1)*0.7;});
+  2348→defItem('regenmatrix','Regen Matrix','epic','💗','+3 regen, heal on kill',p=>{p.regen+=3;p.procs.onKillHeal+=2;});
+  2349→defItem('powergrid','Power Grid','rare','🔌','+18% dmg, +10% ability power',p=>{p.dmgMul*=1.18;p.abilityMul*=1.1;});
+  2350→defItem('swiftkill','Swiftkill Engine','epic','🏹','+1 proj, +12% rate, +6% crit',p=>{p.projAdd+=1;p.fireRateMul*=1.12;p.crit=Math.min(0.95,p.crit+0.06);});
+  2351→
+  2352→/* ---- generated items to reach exactly 200 ---- */
+  2353→(function genItems(){
+  2354→  const PRE=['Quantum','Neon','Void','Cyber','Plasma','Tesla','Nano','Chrono','Phantom','Hyper','Ion','Graviton','Photon','Vortex','Omega','Echo','Pulse','Razor','Titan','Hex','Aether','Glitch','Synth','Volt','Cryo','Pyro','Static','Flux','Helix','Zenith','Onyx','Halcyon','Specter','Karma','Drift'];
+  2355→  const CORE=['Core','Chip','Matrix','Cell','Relay','Module','Engine','Driver','Node','Catalyst','Lens','Coil','Shard','Capacitor','Conduit','Array','Circuit','Reactor','Sigil','Codec','Protocol','Vector','Kernel','Beacon','Fragment','Prism','Servo','Injector','Membrane','Halo'];
+  2356→  const ICONS=['🔧','🔩','💠','🔆','📡','🧪','⚗️','🔬','🛠️','🧷','📟','🎛️','🪫','🔋','💾','🧫','🛰️','⚛️','🌡️','🧲'];
+  2357→  const PAT=['common','common','common','uncommon','common','uncommon','common','rare','common','uncommon','common','common','rare','uncommon','epic','common','uncommon','rare','common','legendary','common','uncommon','common','rare','epic','common','uncommon','common','mythic','common','rare','uncommon','common','epic','common','uncommon','rare','common','ancient','uncommon'];
+  2358→  const TPL=[
+  2359→    {d:s=>'+'+(6*s)+'% damage',f:(p,s)=>{p.dmgMul*=1+0.06*s;}},
+  2360→    {d:s=>'+'+(5*s)+'% fire rate',f:(p,s)=>{p.fireRateMul*=1+0.05*s;}},
+  2361→    {d:s=>'+'+(3*s)+'% crit',f:(p,s)=>{p.crit=Math.min(0.95,p.crit+0.03*s);}},
+  2362→    {d:s=>'+'+(15*s)+'% crit damage',f:(p,s)=>{p.critDmg+=0.15*s;}},
+  2363→    {d:s=>'+'+(15*s)+' max HP',f:(p,s)=>{p.maxhp+=15*s;p.hp+=15*s;}},
+  2364→    {d:s=>'+'+(2*s)+' armor',f:(p,s)=>{p.armor+=2*s;}},
+  2365→    {d:s=>'+'+(0.5*s).toFixed(1)+' regen/s',f:(p,s)=>{p.regen+=0.5*s;}},
+  2366→    {d:s=>'+'+(5*s)+'% move speed',f:(p,s)=>{p.moveMul*=1+0.05*s;}},
+  2367→    {d:s=>'+'+(15*s)+'% pickup',f:(p,s)=>{p.pickupBonus+=0.15*s;}},
+  2368→    {d:s=>'+'+(2*s)+'% lifesteal',f:(p,s)=>{p.lifesteal+=0.02*s;}},
+  2369→    {d:s=>'+'+(4*s)+' thorns',f:(p,s)=>{p.thorns+=4*s;}},
+  2370→    {d:s=>'+'+(8*s)+'% ability power',f:(p,s)=>{p.abilityMul*=1+0.08*s;}},
+  2371→    {d:s=>'+'+(10*s)+'% drone damage',f:(p,s)=>{p.droneDmgMul*=1+0.1*s;}},
+  2372→    {d:s=>'+'+(8*s)+'% XP gain',f:(p,s)=>{p.xpMul*=1+0.08*s;}},
+  2373→    {d:s=>'+'+(2*s)+' luck',f:(p,s)=>{p.luck+=2*s;}},
+  2374→    {d:s=>'+'+(8*s)+'% projectile speed',f:(p,s)=>{p.projSpeedMul*=1+0.08*s;}},
+  2375→    {d:s=>'+'+(12*s)+'% explosion radius',f:(p,s)=>{p.explodeMul*=1+0.12*s;}},
+  2376→  ];
+  2377→  let i=0;
+  2378→  for(let ci=0;ci<CORE.length && ITEMS.length<200;ci++){
+  2379→    for(let pi=0;pi<PRE.length && ITEMS.length<200;pi++){
+  2380→      const rar=PAT[i%PAT.length];const s=ridx(rar);
+  2381→      const t1=TPL[i%TPL.length];const t2=TPL[(i*7+3)%TPL.length];
+  2382→      const icon=ICONS[i%ICONS.length];
+  2383→      let desc=t1.d(s);let fn;
+  2384→      if(s>=3 && t2!==t1){const s2=Math.max(1,s-1);desc+=', '+t2.d(s2);fn=(p)=>{t1.f(p,s);t2.f(p,s2);};}
+  2385→      else fn=(p)=>{t1.f(p,s);};
+  2386→      if(s>=4 && i%9===0){const base=fn;fn=(p)=>{base(p);p.projAdd+=1;};desc+=', +1 projectile';}
+  2387→      if(s>=5 && i%6===0){const base=fn;fn=(p)=>{base(p);p.procs.onKillExplode+=1;};desc+=', kills may explode';}
+  2388→      defItem('gen'+i,PRE[pi]+' '+CORE[ci],rar,icon,desc,fn);
+  2389→      i++;
+  2390→    }
+  2391→  }
+  2392→})();
+  2393→const ITEM_BUCKETS={};RKEYS.forEach(r=>ITEM_BUCKETS[r]=ITEMS.filter(it=>it.rar===r));
+  2394→
+  2395→/* ---- run state + persistence ---- */
+  2396→let gameItems=[];           // world pickups
+  2397→function defaultProcs(){return {onKillExplode:0,onKillHeal:0,chainHit:0,orbitBlades:0,regenPerKill:0};}
+  2398→function rollItemRarity(luck,bias){
+  2399→  let tot=0;const ws={};
+  2400→  for(const r of RKEYS){let w=ITEM_RAR[r].w;const idx=ridx(r);w*=(1+(luck||0)*0.015*idx);if(bias)w*=(1+idx*0.7*bias);ws[r]=w;tot+=w;}
+  2401→  let x=Math.random()*tot;for(const r of RKEYS){x-=ws[r];if(x<=0)return r;}return 'common';
+  2402→}
+  2403→function dropItem(x,z,bias){
+  2404→  const rar=rollItemRarity(P.luck||0,bias||0);
+  2405→  const bucket=ITEM_BUCKETS[rar];const item=(bucket&&bucket.length)?pick(bucket):pick(ITEMS);
+  2406→  gameItems.push({x:x+rand(-20,20),z:z+rand(-20,20),y:24,t:0,vx:rand(-90,90),vz:rand(-90,90),item});
+  2407→}
+  2408→function applyItem(item){
+  2409→  if(!P.procs)P.procs=defaultProcs();
+  2410→  item.fn(P);
+  2411→  P.items[item.id]=(P.items[item.id]||0)+1;
+  2412→  if(window.Meta){if(!Meta.data.itemsDiscovered)Meta.data.itemsDiscovered=[];
+  2413→    if(!Meta.data.itemsDiscovered.includes(item.id)){Meta.data.itemsDiscovered.push(item.id);Meta.save();}}
+  2414→  if(typeof showLootPopup==='function')showLootPopup(item.icon+' '+item.name,ITEM_RAR[item.rar].c,item.desc);
+  2415→  else notify(item.name,ITEM_RAR[item.rar].c);
+  2416→  if(Audio.pickup)Audio.pickup();
+  2417→  for(let k=0;k<14;k++){const a=rand(0,TWO_PI);const c=hex3(ITEM_RAR[item.rar].c);
+  2418→    spawnParticle(P.x,P.z,30,Math.cos(a)*200,rand(100,300),Math.sin(a)*200,0.6,9,c[0],c[1],c[2],'diamond',true);}
+  2419→}
+  2420→function updateItemPickups(dt){
+  2421→  for(let i=gameItems.length-1;i>=0;i--){const g=gameItems[i];g.t+=dt;g.vx*=0.9;g.vz*=0.9;g.x+=g.vx*dt;g.z+=g.vz*dt;g.y=24+Math.sin(g.t*3)*5;
+  2422→    const mag=(P.magnet||300)*(1+(P.pickupBonus||0));
+  2423→    if(dist2(g.x,g.z,P.x,P.z)<mag*mag){const a=Math.atan2(P.z-g.z,P.x-g.x);g.x+=Math.cos(a)*820*dt;g.z+=Math.sin(a)*820*dt;}
+  2424→    if(dist2(g.x,g.z,P.x,P.z)<(P.radius+30)*(P.radius+30)){applyItem(g.item);gameItems.splice(i,1);}}
+  2425→  // orbiting blades
+  2426→  if(P.procs&&P.procs.orbitBlades>0){P._orbAng=(P._orbAng||0)+dt*3.2;const k=Math.min(8,P.procs.orbitBlades);const Rr=120;
+  2427→    for(let b=0;b<k;b++){const a=P._orbAng+b/k*TWO_PI;const ox=P.x+Math.cos(a)*Rr,oz=P.z+Math.sin(a)*Rr;
+  2428→      Grid.query(ox,oz,46,e=>{if(e.dead)return;if(dist2(ox,oz,e.x,e.z)<(46+e.radius)*(46+e.radius)){
+  2429→        if((e._orbCd||0)<=G.t){e._orbCd=G.t+260;damageEnemy(e,10*P.procs.orbitBlades*(P.dmgMul||1),Math.random()<P.crit,e.x-ox,e.z-oz,30);}}});}}
+  2430→}
+  2431→/* proc hooks */
+  2432→function itemOnKill(e){
+  2433→  if(!P.procs)return;
+  2434→  if(P.procs.onKillHeal>0)heal(P.procs.onKillHeal);
+  2435→  if(P.procs.regenPerKill>0)P.regenAcc=(P.regenAcc||0)+P.procs.regenPerKill;
+  2436→  if(P.procs.onKillExplode>0&&Math.random()<Math.min(0.65,0.13*P.procs.onKillExplode))
+  2437→    explode(e.x,e.z,150,14*P.procs.onKillExplode*(P.dmgMul||1),1,0.6,0.2);
+  2438→}
+  2439→function itemOnHit(e){
+  2440→  if(!P.procs||P.procs.chainHit<=0||G._chaining||e.dead)return;
+  2441→  if(Math.random()>Math.min(0.5,0.12*P.procs.chainHit))return;
+  2442→  G._chaining=true;let cnt=Math.min(4,P.procs.chainHit),cur=e;const hit=new Set([e]);
+  2443→  while(cur&&cnt-->0){let nx=null,bd=420*420;
+  2444→    Grid.query(cur.x,cur.z,420,o=>{if(o.dead||hit.has(o))return;const d=dist2(cur.x,cur.z,o.x,o.z);if(d<bd){bd=d;nx=o;}});
+  2445→    if(nx){hit.add(nx);beams.push({x:cur.x,z:cur.z,ax:nx.x-cur.x,az:nx.z-cur.z,seg:true,r:0.7,g:0.9,b:1,life:0.1,max:0.1});
+  2446→      damageEnemy(nx,14*P.procs.chainHit*(P.dmgMul||1),false,0,0,10);}cur=nx;}
+  2447→  G._chaining=false;
+  2448→}
+  2449→function drawItems2D(){
+  2450→  const ctx=FX.ctx;if(!ctx)return;
+  2451→  for(let i=0;i<gameItems.length;i++){const g=gameItems[i];const c=FX.project(g.x,g.z);if(!c)continue;
+  2452→    const col=ITEM_RAR[g.item.rar].c;ctx.save();ctx.shadowColor=col;ctx.shadowBlur=14;
+  2453→    ctx.fillStyle=col;ctx.beginPath();const s=9+Math.sin(g.t*4)*2;
+  2454→    ctx.moveTo(c[0],c[1]-s);ctx.lineTo(c[0]+s,c[1]);ctx.lineTo(c[0],c[1]+s);ctx.lineTo(c[0]-s,c[1]);ctx.closePath();ctx.fill();
+  2455→    ctx.shadowBlur=0;ctx.font='12px Segoe UI';ctx.textAlign='center';ctx.fillText(g.item.icon,c[0],c[1]-14);ctx.restore();}
+  2456→  // orbiting blades
+  2457→  if(P.procs&&P.procs.orbitBlades>0){const k=Math.min(8,P.procs.orbitBlades);const Rr=120;
+  2458→    for(let b=0;b<k;b++){const a=(P._orbAng||0)+b/k*TWO_PI;const cc=FX.project(P.x+Math.cos(a)*Rr,P.z+Math.sin(a)*Rr);if(!cc)continue;
+  2459→      ctx.fillStyle='rgba(120,255,220,.95)';ctx.beginPath();ctx.arc(cc[0],cc[1],4,0,TWO_PI);ctx.fill();}}
+  2460→}
+  2461→/* inventory panel */
+  2462→function toggleInventory(){
+  2463→  let el=document.getElementById('inv');
+  2464→  if(el&&el.style.display==='flex'){el.style.display='none';return;}
+  2465→  if(!el){el=document.createElement('div');el.id='inv';el.className='screen';el.style.display='none';
+  2466→    el.innerHTML='<div class="card" style="max-width:760px"><h1 class="title" style="font-size:24px">INVENTORY</h1>'+
+  2467→      '<div class="sub" id="invSub"></div><div id="invGrid" class="shopgrid"></div>'+
+  2468→      '<button class="btn" id="invClose" style="margin-top:12px">CLOSE (I)</button></div>';
+  2469→    document.getElementById('hud').parentNode.appendChild(el);
+  2470→    el.querySelector('#invClose').onclick=()=>{el.style.display='none';};}
+  2471→  const grid=el.querySelector('#invGrid');grid.innerHTML='';
+  2472→  const disc=window.Meta&&Meta.data.itemsDiscovered?Meta.data.itemsDiscovered.length:0;
+  2473→  el.querySelector('#invSub').innerHTML='Run items: '+Object.keys(P.items||{}).length+' kinds &middot; Discovered all-time: <b style="color:var(--cyan)">'+disc+' / '+ITEMS.length+'</b>';
+  2474→  const order={};ITEMS.forEach(it=>order[it.id]=it);
+  2475→  const keys=Object.keys(P.items||{}).sort((a,b)=>ridx(order[b].rar)-ridx(order[a].rar));
+  2476→  if(!keys.length)grid.innerHTML='<div style="opacity:.6;padding:14px">No items yet — kill elites & bosses to find them.</div>';
+  2477→  keys.forEach(id=>{const it=order[id];const n=P.items[id];const d=document.createElement('div');d.className='shopitem';d.style.cursor='default';d.style.borderColor=ITEM_RAR[it.rar].c;
+  2478→    d.innerHTML='<div style="font-size:20px">'+it.icon+'</div><div style="font-weight:800;color:'+ITEM_RAR[it.rar].c+'">'+it.name+(n>1?' ×'+n:'')+'</div>'+
+  2479→      '<div style="font-size:10px;opacity:.55;letter-spacing:1px">'+ITEM_RAR[it.rar].n+'</div><div style="font-size:11px;opacity:.8">'+it.desc+'</div>';
+  2480→    grid.appendChild(d);});
+  2481→  el.style.display='flex';
+  2482→}
+  2483→
+  2484→/* ---- WRAP existing functions to integrate items (no edits to core bodies) ---- */
+  2485→if(typeof resetGame==='function'){const _rg2=resetGame;resetGame=function(m){_rg2(m);P.items={};P.procs=defaultProcs();P._orbAng=0;gameItems.length=0;};}
+  2486→if(typeof killEnemy==='function'){const _ke=killEnemy;killEnemy=function(e){const had=e._counted;_ke(e);if(e._counted&&!had){try{itemOnKill(e);for(let _j=0;_j<(e.boss?44:e.elite?16:9);_j++){const _a=rand(0,TWO_PI),_sp=rand(110,e.boss?640:360);spawnParticle(e.x,e.z,e.radius,Math.cos(_a)*_sp,rand(70,e.boss?440:240),Math.sin(_a)*_sp,rand(0.25,0.6),rand(6,e.boss?22:12),e.cr,e.cg,e.cb,'diamond',true);}G.shake=Math.min(G.shake+(e.boss?24:e.elite?7:2.5),34);
+  2487→  let bias=e.boss?1.2:(e.elite?0.4:0);let chance=e.boss?1:(e.elite?0.35:0.03*(1+(P.luck||0)*0.05));
+  2488→  if(e.boss){dropItem(e.x,e.z,1.4);dropItem(e.x,e.z,0.8);}else if(Math.random()<chance)dropItem(e.x,e.z,bias);}catch(_){}}};}
+  2489→if(typeof damageEnemy==='function'){const _de=damageEnemy;damageEnemy=function(e,a,c,kx,kz,kn){_de(e,a,c,kx,kz,kn);if(P.procs&&P.procs.chainHit>0)try{itemOnHit(e);}catch(_){}}; }
+  2490→if(typeof update==='function'){const _up=update;update=function(dt){_up(dt);try{updateItemPickups(dt);if(P.muzzleT>0)P.muzzleT-=dt;if(!P.downed&&(P.mvx||P.mvz)&&(G.frame&1)===0){spawnParticle(P.x-(P.mvx||0)*22,P.z-(P.mvz||0)*22,16,-(P.mvx||0)*70+rand(-25,25),rand(15,55),-(P.mvz||0)*70+rand(-25,25),0.4,7,0.3,0.85,1,'diamond');}}catch(_){}};}
+  2491→if(typeof drawFX==='function'){const _dfx=drawFX;drawFX=function(){_dfx();try{drawItems2D();}catch(_){}};}
+  2492→if(typeof draw==='function'){const _dr=draw;draw=function(){_dr();try{if(window.T&&T.hideGun)T.hideGun();}catch(_){}};}
+  2493→addEventListener('keydown',e=>{if(e.key.toLowerCase()==='i'&&G.running)toggleInventory();});
+  2494→
+  2495→startEngine();
+  2496→</script>
+  2497→</body>
+  2498→</html>
+  2499→
