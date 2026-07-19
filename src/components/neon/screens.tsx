@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNeon, fmtTime } from '@/lib/neon/store';
 import {
@@ -9,7 +9,7 @@ import {
 } from '@/lib/neon/data';
 
 /* ============ shared screen shell ============ */
-export function ScreenShell({ icon, title, sub, onBack, children }: { icon: string; title: string; sub?: string; onBack: () => void; children: React.ReactNode }) {
+export function ScreenShell({ icon, title, sub, onBack, children }: { icon: string; title: string; sub?: string; onBack: () => void; children: ReactNode }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }}
@@ -553,10 +553,10 @@ export function FriendsScreen({ onBack }: { onBack: () => void }) {
   const setPlayerName = useNeon(s => s.setPlayerName);
   const addFriend = useNeon(s => s.addFriend);
   const removeFriend = useNeon(s => s.removeFriend);
-  const [newName, setNewName] = React.useState('');
-  const [newId, setNewId] = React.useState('');
-  const [editingName, setEditingName] = React.useState(false);
-  const [tempName, setTempName] = React.useState(meta.playerName);
+  const [newName, setNewName] = useState('');
+  const [newId, setNewId] = useState('');
+  const [editingName, setEditingName] = useState(false);
+  const [tempName, setTempName] = useState(meta.playerName);
 
   return (
     <ScreenShell icon="👥" title="FRIENDS" sub={`${meta.friends.length} CONNECTED`} onBack={onBack}>
