@@ -380,6 +380,18 @@ const Bridge={
         case 'setMap':
           Bridge.applyMap(msg.mapId);
           break;
+        case 'netConnect':
+          if(window.Net){
+            const name=msg.name||'Player';
+            const code=msg.code||undefined;
+            Net.connect(name,code);
+            window._netLobbyCb=(m)=>{
+              if(m&&m.type==='created'&&window.notify){
+                notify('Room code: '+m.code,'var(--cyan)');
+              }
+            };
+          }
+          break;
       }
     }catch(_){}
   },

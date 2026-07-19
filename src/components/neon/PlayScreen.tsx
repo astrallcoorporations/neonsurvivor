@@ -7,12 +7,13 @@ import { fmtTime, useNeon } from '@/lib/neon/store';
 
 interface Props {
   mode: string;
+  netConfig?: { role: 'host' | 'join'; name: string; code?: string } | null;
   onExit: (result: { score: number; kills: number; time: number; level: number; wave: number } | null) => void;
 }
 
-export default function PlayScreen({ mode, onExit }: Props) {
+export default function PlayScreen({ mode, netConfig, onExit }: Props) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const { ready, hud, startGame, pause, resume, quit, focusGame, sendSettings, sendMap } = useNeonBridge(iframeRef);
+  const { ready, hud, startGame, pause, resume, quit, focusGame, sendSettings, sendMap, send } = useNeonBridge(iframeRef);
   const [started, setStarted] = useState(false);
   const [showPause, setShowPause] = useState(false);
   const [dismissed, setDismissed] = useState(false);
@@ -46,11 +47,20 @@ export default function PlayScreen({ mode, onExit }: Props) {
       const t = setTimeout(() => {
         sendSettings(meta.settings);
         if (sendMap) sendMap(meta.settings.selectedMap || 'neon_grid');
-        setTimeout(() => { startGame(mode); setStarted(true); }, 80);
+        setTimeout(() => {
+          startGame(mode);
+          setStarted(true);
+          // If multiplayer, tell iframe to connect to WebSocket after game loads
+          if (netConfig) {
+            setTimeout(() => {
+              send('netConnect', { role: netConfig.role, name: netConfig.name, code: netConfig.code });
+            }, 600);
+          }
+        }, 80);
       }, 150);
       return () => clearTimeout(t);
     }
-  }, [ready, started, mode, startGame]);
+  }, [ready, started, mode, startGame, send, netConfig]);
 
   // When the game reports `over`, refresh meta once
   useEffect(() => {

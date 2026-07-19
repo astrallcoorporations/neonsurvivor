@@ -12,12 +12,15 @@ import {
   ChallengesScreen, NewsScreen, HowToScreen, SettingsScreen,
   MapSelectScreen, FriendsScreen,
 } from '@/components/neon/screens';
+import { MultiplayerScreen } from '@/components/neon/MultiplayerScreen';
 
-type Screen = 'landing' | 'menu' | 'play' | 'stats' | 'arsenal' | 'bestiary' | 'achievements' | 'shop' | 'classes' | 'daily' | 'challenges' | 'news' | 'howto' | 'settings' | 'mapselect' | 'friends';
+type NetConfig = { role: 'host' | 'join'; name: string; code?: string };
+type Screen = 'landing' | 'menu' | 'play' | 'stats' | 'arsenal' | 'bestiary' | 'achievements' | 'shop' | 'classes' | 'daily' | 'challenges' | 'news' | 'howto' | 'settings' | 'mapselect' | 'friends' | 'multiplayer';
 
 export default function Home() {
   const [screen, setScreen] = useState<Screen>('landing');
   const [mode, setMode] = useState<string>('endless');
+  const [netConfig, setNetConfig] = useState<NetConfig | null>(null);
 
   const play = useCallback((m: string) => { setMode(m); setScreen('play'); }, []);
   const back = useCallback(() => setScreen('menu'), []);
@@ -61,11 +64,18 @@ export default function Home() {
           {screen === 'howto' && <HowToScreen key="howto" onBack={back} />}
           {screen === 'settings' && <SettingsScreen key="settings" onBack={back} />}
           {screen === 'friends' && <FriendsScreen key="friends" onBack={back} />}
+          {screen === 'multiplayer' && (
+            <MultiplayerScreen
+              key="mp"
+              onBack={back}
+              onStart={(cfg) => { setNetConfig(cfg); setMode('endless'); setScreen('play'); }}
+            />
+          )}
           {screen === 'mapselect' && (
             <MapSelectScreen key="mapselect" onSelect={m => play(m)} onBack={back} />
           )}
           {screen === 'play' && (
-            <PlayScreen key="play" mode={mode} onExit={() => setScreen('menu')} />
+            <PlayScreen key="play" mode={mode} netConfig={netConfig} onExit={() => { setNetConfig(null); setScreen('menu'); }} />
           )}
         </AnimatePresence>
       </div>
