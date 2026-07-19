@@ -12,7 +12,7 @@ interface Props {
 
 export default function PlayScreen({ mode, onExit }: Props) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const { ready, hud, startGame, pause, resume, quit, focusGame, sendSettings } = useNeonBridge(iframeRef);
+  const { ready, hud, startGame, pause, resume, quit, focusGame, sendSettings, sendMap } = useNeonBridge(iframeRef);
   const [started, setStarted] = useState(false);
   const [showPause, setShowPause] = useState(false);
   const [dismissed, setDismissed] = useState(false);
@@ -20,12 +20,13 @@ export default function PlayScreen({ mode, onExit }: Props) {
   const meta = useNeon(s => s.meta);
   const reloadedRef = useRef(false);
 
-  // Send settings to iframe on game start and when they change
+  // Send settings + map to iframe on game start and when they change
   useEffect(() => {
     if (started && sendSettings) {
       sendSettings(meta.settings);
+      if (sendMap) sendMap(meta.settings.selectedMap || 'neon_grid');
     }
-  }, [started, meta.settings, sendSettings]);
+  }, [started, meta.settings, sendSettings, sendMap]);
 
   useEffect(() => {
     const onChange = (e: Event) => {

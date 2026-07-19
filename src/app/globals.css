@@ -368,4 +368,47 @@ iframe { touch-action: none; }
   inset: 0;
 }
 
+/* ============================================================
+   OVERLAY ANIMATIONS — wave, boss, kill streak
+   ============================================================ */
+@keyframes waveIn {
+  0% { opacity: 0; transform: scale(0.6) translateY(20px); letter-spacing: 16px; }
+  50% { opacity: 1; transform: scale(1.05) translateY(0); letter-spacing: 6px; }
+  100% { opacity: 0; transform: scale(1.1) translateY(-10px); letter-spacing: 10px; }
+}
+@keyframes bossIn {
+  0% { opacity: 0; transform: scaleX(0); }
+  30% { opacity: 1; transform: scaleX(1.05); }
+  70% { opacity: 1; transform: scaleX(1); }
+  100% { opacity: 0; transform: scaleX(1) translateY(-8px); }
+}
+@keyframes killStreakPop {
+  0% { opacity: 0; transform: scale(0.5) translateY(10px); }
+  40% { opacity: 1; transform: scale(1.15) translateY(-4px); }
+  100% { opacity: 0; transform: scale(0.9) translateY(-20px); }
+}
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(40px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-wave-in { animation: waveIn 2s ease-out forwards; }
+.animate-boss-in { animation: bossIn 2.5s ease-out forwards; }
+.animate-kill-streak { animation: killStreakPop 1.2s ease-out forwards; }
+.animate-slide-right { animation: slideInRight 0.4s ease-out forwards; }
+.animate-count-up { animation: countUp 0.5s ease-out forwards; }
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent 30%, rgba(255,255,255,.12) 50%, transparent 70%);
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
+}
+
 

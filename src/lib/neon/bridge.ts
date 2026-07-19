@@ -56,6 +56,7 @@ export function useNeonBridge(iframeRef: React.RefObject<HTMLIFrameElement | nul
   const focusGame = useCallback(() => send('focus'), [send]);
   const queryMeta = useCallback(() => send('queryMeta'), [send]);
   const sendSettings = useCallback((settings: any) => send('settings', { settings }), [send]);
+  const sendMap = useCallback((mapId: string) => send('setMap', { mapId }), [send]);
 
-  return { ready, hud, lastEvent, startGame, pause, resume, quit, focusGame, queryMeta, sendSettings, send };
+  return { ready, hud, lastEvent, startGame, pause, resume, quit, focusGame, queryMeta, sendSettings, sendMap, send };
 }

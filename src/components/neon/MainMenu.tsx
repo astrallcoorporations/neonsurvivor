@@ -2,22 +2,28 @@
 
 import { motion } from 'framer-motion';
 import { useNeon, fmtTime } from '@/lib/neon/store';
-import { MODES, CLASSES } from '@/lib/neon/data';
+import { MODES, CLASSES, MAPS } from '@/lib/neon/data';
 
 export function MainMenu({ onPlay, onNav }: { onPlay: (mode: string) => void; onNav: (s: string) => void }) {
   const meta = useNeon(s => s.meta);
   const cls = CLASSES.find(c => c.id === meta.classId) || CLASSES[0];
   const featured = MODES[0];
   const secondary = MODES.slice(1);
+  const currentMap = MAPS.find(m => m.id === meta.settings.selectedMap) || MAPS[0];
 
-  const navs: { id: string; label: string; icon: string; color: string }[] = [
+  const hasDailyRewards = (meta.dailyQuests || []).some(q => {
+    const prog = meta.dailyProgress[q.id] || 0;
+    return prog >= q.target && !q.claimed;
+  });
+
+  const navs: { id: string; label: string; icon: string; color: string; badge?: boolean }[] = [
     { id: 'stats', label: 'STATS', icon: '📊', color: 'var(--neon-cyan)' },
     { id: 'arsenal', label: 'ARSENAL', icon: '🔫', color: 'var(--neon-mag)' },
     { id: 'bestiary', label: 'BESTIARY', icon: '👹', color: 'var(--neon-red)' },
     { id: 'achievements', label: 'AWARDS', icon: '🏆', color: 'var(--neon-yel)' },
     { id: 'shop', label: 'SHOP', icon: '🛒', color: 'var(--neon-grn)' },
     { id: 'classes', label: 'CLASSES', icon: '⚡', color: 'var(--neon-pur)' },
-    { id: 'daily', label: 'DAILY', icon: '📅', color: 'var(--neon-cyan)' },
+    { id: 'daily', label: 'DAILY', icon: '📅', color: 'var(--neon-cyan)', badge: hasDailyRewards },
     { id: 'challenges', label: 'CHALLENGES', icon: '⚔️', color: 'var(--neon-mag)' },
     { id: 'news', label: 'NEWS', icon: '📰', color: 'var(--neon-grn)' },
     { id: 'howto', label: 'HOW TO PLAY', icon: '❓', color: 'var(--neon-yel)' },
@@ -74,6 +80,19 @@ export function MainMenu({ onPlay, onNav }: { onPlay: (mode: string) => void; on
             <ProfileStat label="RUNS" val={String(meta.stats.totalRuns)} />
           </div>
 
+          {/* current map preview */}
+          <div className="neon-panel p-3 mb-3">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-md flex items-center justify-center text-sm" style={{ background: `${currentMap.accent}20`, border: `1px solid ${currentMap.accent}55` }}>
+                {currentMap.icon}
+              </div>
+              <div>
+                <div className="font-mono-neon text-[9px] neon-text-faint tracking-widest">ARENA</div>
+                <div className="font-display text-xs" style={{ color: currentMap.accent }}>{currentMap.name}</div>
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-2">
             <button onClick={() => onNav('shop')} className="neon-btn-ghost py-2 text-xs">🛒 SHOP</button>
             <button onClick={() => onNav('classes')} className="neon-btn-ghost py-2 text-xs">⚡ CLASS</button>
@@ -98,9 +117,12 @@ export function MainMenu({ onPlay, onNav }: { onPlay: (mode: string) => void; on
               <div className="font-display font-black text-4xl sm:text-5xl mb-2" style={{ color: featured.color }}>{featured.name}</div>
               <div className="font-mono-neon text-xs tracking-widest mb-3 neon-text-dim uppercase">{featured.tagline}</div>
               <div className="text-sm neon-text-dim max-w-md mb-4">{featured.desc}</div>
-              <span className="neon-btn inline-block px-6 py-2 text-sm" style={{ borderColor: featured.color, color: featured.color }}>
-                PLAY NOW ▶
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="neon-btn inline-block px-6 py-2 text-sm" style={{ borderColor: featured.color, color: featured.color }}>
+                  SELECT MAP ▶
+                </span>
+                <span className="font-mono-neon text-[10px] neon-text-faint">CHOOSE YOUR ARENA NEXT</span>
+              </div>
             </div>
           </motion.button>
 
@@ -131,9 +153,12 @@ export function MainMenu({ onPlay, onNav }: { onPlay: (mode: string) => void; on
             </div>
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
               {navs.map(n => (
-                <button key={n.id} onClick={() => onNav(n.id)} className="neon-btn-ghost py-3 px-2 flex flex-col items-center gap-1.5 group">
+                <button key={n.id} onClick={() => onNav(n.id)} className="neon-btn-ghost py-3 px-2 flex flex-col items-center gap-1.5 group relative">
                   <span className="text-xl group-hover:scale-110 transition" style={{ filter: `drop-shadow(0 0 6px ${n.color})` }}>{n.icon}</span>
                   <span className="text-[10px] font-semibold tracking-wider">{n.label}</span>
+                  {n.badge && (
+                    <div className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full" style={{ background: 'var(--neon-yel)', boxShadow: '0 0 6px var(--neon-yel)' }} />
+                  )}
                 </button>
               ))}
             </div>

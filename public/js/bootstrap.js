@@ -374,8 +374,59 @@ const Bridge={
         case 'focus':
           window.focus();
           break;
+        case 'settings':
+          Bridge.applySettings(msg.settings);
+          break;
+        case 'setMap':
+          Bridge.applyMap(msg.mapId);
+          break;
       }
     }catch(_){}
+  },
+  applySettings(s){
+    if(!s)return;
+    // audio volumes
+    if(window.Audio){
+      if(s.masterVolume!=null&&Audio.master)Audio.master.gain.value=s.masterVolume;
+      if(s.musicVolume!=null&&Audio.musicGain)Audio.musicGain.gain.value=s.musicVolume;
+      if(s.sfxVolume!=null&&Audio.sfxGain)Audio.sfxGain.gain.value=s.sfxVolume;
+    }
+    // bloom
+    if(s.bloom!=null&&window.R){R.bloom=!!s.bloom;}
+    // scanlines
+    if(s.scanlines!=null){const el=document.getElementById('scanlines');if(el)el.style.display=s.scanlines?'':'none';}
+    // screen shake global flag
+    if(s.screenShake!=null&&window.G){G.noShake=!s.screenShake;}
+    // damage numbers
+    if(s.damageNumbers!=null&&window.G){G.noDmgNum=!s.damageNumbers;}
+    // reduced motion
+    if(s.reducedMotion!=null&&window.G){G.reducedMotion=!!s.reducedMotion;}
+    // particle quality: low=0.3, medium=0.6, high=1.0
+    if(s.particleQuality&&window.G){
+      const m={low:0.3,medium:0.6,high:1};G.particleMul=m[s.particleQuality]||1;
+    }
+  },
+  applyMap(mapId){
+    if(!mapId||!window.G)return;
+    G.mapId=mapId;
+    const themes={
+      neon_grid:       {ground:'#1a0530',grid:'rgba(34,230,255,0.2)',fog:'rgba(122,17,72,0.5)',gridLine:'22e6ff',fogColor:[0.48,0.07,0.28]},
+      crimson_wastes:  {ground:'#1a0800',grid:'rgba(255,59,92,0.2)',fog:'rgba(255,59,92,0.4)',gridLine:'ff3b5c',fogColor:[1,0.23,0.36]},
+      void_depths:     {ground:'#06021a',grid:'rgba(155,92,255,0.15)',fog:'rgba(155,92,255,0.3)',gridLine:'9b5cff',fogColor:[0.61,0.36,1]},
+      toxic_sewers:    {ground:'#040d08',grid:'rgba(67,255,158,0.2)',fog:'rgba(67,255,158,0.35)',gridLine:'43ff9e',fogColor:[0.26,1,0.62]},
+      frozen_core:     {ground:'#060d18',grid:'rgba(120,200,255,0.2)',fog:'rgba(120,200,255,0.3)',gridLine:'78c8ff',fogColor:[0.47,0.78,1]},
+      solar_flare:     {ground:'#1a1000',grid:'rgba(255,226,74,0.25)',fog:'rgba(255,226,74,0.3)',gridLine:'ffe24a',fogColor:[1,0.89,0.29]},
+    };
+    const t=themes[mapId]||themes.neon_grid;
+    G.mapTheme=t;
+    // Apply ground color to renderer background
+    if(window.R&&R.gl){
+      const gc=t.ground;
+      const r=parseInt(gc.slice(1,3),16)/255;
+      const g=parseInt(gc.slice(3,5),16)/255;
+      const b=parseInt(gc.slice(5,7),16)/255;
+      R.gl.clearColor(r,g,b,0);
+    }
   }
 };
 window.NeonBridge=Bridge;

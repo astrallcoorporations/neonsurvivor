@@ -25,6 +25,19 @@ export const MODES: ModeDef[] = [
   { id:'custom',   name:'CHAOS',       tagline:'x2 XP, pre-armed',         desc:'Start with 5 weapons, a drone, and double XP. Pure power fantasy.',         icon:'⚡', color:'#ffe24a', accent:'rgba(255,226,74,.18)' },
 ];
 
+export interface MapDef {
+  id: string; name: string; tagline: string; desc: string; icon: string;
+  ground: string; grid: string; fog: string; accent: string; skyTop: string; skyBot: string;
+}
+export const MAPS: MapDef[] = [
+  { id:'neon_grid', name:'NEON GRID', tagline:'Classic cyberpunk', desc:'The original. Electric blue grid, magenta fog, synthwave sky.', icon:'🌐', ground:'#1a0530', grid:'rgba(34,230,255,0.2)', fog:'rgba(122,17,72,0.5)', accent:'#22e6ff', skyTop:'#05030d', skyBot:'#7a1148' },
+  { id:'crimson_wastes', name:'CRIMSON WASTES', tagline:'Blood-red hellscape', desc:'Molten ground, ember particles. Hell themed.', icon:'🌋', ground:'#1a0800', grid:'rgba(255,59,92,0.2)', fog:'rgba(255,59,92,0.4)', accent:'#ff3b5c', skyTop:'#0d0200', skyBot:'#4a0a0a' },
+  { id:'void_depths', name:'VOID DEPTHS', tagline:'Abyssal darkness', desc:'Deep space. Purple nebula, cold stars. Minimal grid.', icon:'🕳️', ground:'#06021a', grid:'rgba(155,92,255,0.15)', fog:'rgba(155,92,255,0.3)', accent:'#9b5cff', skyTop:'#020010', skyBot:'#1a0840' },
+  { id:'toxic_sewers', name:'TOXIC SEWERS', tagline:'Radioactive sludge', desc:'Green toxic glow, industrial pipes. Radioactive.', icon:'☢️', ground:'#040d08', grid:'rgba(67,255,158,0.2)', fog:'rgba(67,255,158,0.35)', accent:'#43ff9e', skyTop:'#020804', skyBot:'#0a2a14' },
+  { id:'frozen_core', name:'FROZEN CORE', tagline:'Sub-zero arena', desc:'Ice-blue ground, white particles. Crystalline.', icon:'❄️', ground:'#060d18', grid:'rgba(120,200,255,0.2)', fog:'rgba(120,200,255,0.3)', accent:'#78c8ff', skyTop:'#03080f', skyBot:'#0a2040' },
+  { id:'solar_flare', name:'SOLAR FLARE', tagline:'Blinding light', desc:'Golden scorched earth. Overwhelming brightness.', icon:'☀️', ground:'#1a1000', grid:'rgba(255,226,74,0.25)', fog:'rgba(255,226,74,0.3)', accent:'#ffe24a', skyTop:'#0d0800', skyBot:'#3a2a00' },
+];
+
 export interface WeaponDef{ name:string; desc:string; col:[number,number,number]; icon:string; }
 export const WEAPONS: WeaponDef[] = [
   { name:'BLASTER',         desc:'Rapid neon bolts',         col:[0.2,0.9,1],    icon:'🔫' },
@@ -175,6 +188,15 @@ export const CONTROLS = [
 ];
 
 export const CHANGELOG = [
+  { v:'2.1.0', date:'MAPS & POLISH', items:[
+    '6 playable arenas: Neon Grid, Crimson Wastes, Void Depths, Toxic Sewers, Frozen Core, Solar Flare',
+    'Map selection in main menu with live preview',
+    'Wave announcement overlays, boss intro screens, kill streak popups',
+    'Polished main menu with map selector, notification badges, smoother transitions',
+    '3D GLB models for player ship, enemies, bosses, weapons, pickups, environment',
+    'Settings bridge: audio, bloom, scanlines, shake, particles sync to game',
+    'Gamepad support with aim assist',
+  ]},
   { v:'2.0.0', date:'CRAZY REDESIGN', items:[
     'Holographic chromatic title + animated gradient borders',
     'CRT scanline overlay & glassmorphism panels',

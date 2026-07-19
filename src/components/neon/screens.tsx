@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNeon, fmtTime } from '@/lib/neon/store';
 import {
   WEAPONS, ABILITIES, ENEMIES, BOSSES, CLASSES, SHOP_ITEMS,
-  CHALLENGES, ACHIEVEMENTS, CONTROLS, CHANGELOG,
+  CHALLENGES, ACHIEVEMENTS, CONTROLS, CHANGELOG, MAPS,
 } from '@/lib/neon/data';
 
 /* ============ shared screen shell ============ */
@@ -471,6 +471,82 @@ export function HowToScreen({ onBack }: { onBack: () => void }) {
   );
 }
 
+/* ============ MAP SELECT ============ */
+export function MapSelectScreen({ onSelect, onBack }: { onSelect: (mapId: string) => void; onBack: () => void }) {
+  const meta = useNeon(s => s.meta);
+  const [hovered, setHovered] = useState<string | null>(null);
+  const active = hovered || meta.settings.selectedMap;
+  const activeMap = MAPS.find(m => m.id === active) || MAPS[0];
+
+  return (
+    <ScreenShell icon="🗺️" title="SELECT ARENA" sub="CHOOSE YOUR BATTLEGROUND" onBack={onBack}>
+      {/* live preview */}
+      <div className="neon-card p-5 mb-5 relative overflow-hidden" style={{ borderColor: activeMap.accent + '55' }}>
+        <div className="absolute inset-0 opacity-30" style={{
+          background: `radial-gradient(ellipse at center, ${activeMap.accent}22, transparent 70%)`,
+        }} />
+        <div className="relative flex items-center gap-6">
+          <div className="w-20 h-20 rounded-2xl flex items-center justify-center text-4xl flex-shrink-0"
+            style={{ background: `linear-gradient(135deg, ${activeMap.accent}22, ${activeMap.accent}08)`, border: `2px solid ${activeMap.accent}55` }}>
+            {activeMap.icon}
+          </div>
+          <div className="flex-1">
+            <div className="font-display text-2xl tracking-wide mb-1" style={{ color: activeMap.accent }}>{activeMap.name}</div>
+            <div className="font-mono-neon text-xs neon-text-faint tracking-widest mb-2">{activeMap.tagline.toUpperCase()}</div>
+            <div className="text-sm neon-text-dim">{activeMap.desc}</div>
+          </div>
+          <button onClick={() => onSelect(active)} className="neon-btn px-6 py-3 text-sm flex-shrink-0"
+            style={{ borderColor: activeMap.accent, color: activeMap.accent }}>
+            PLAY ON {activeMap.name} ▶
+          </button>
+        </div>
+        {/* ground color preview bar */}
+        <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: activeMap.accent, opacity: 0.6 }} />
+      </div>
+
+      {/* map grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {MAPS.map((m, i) => {
+          const sel = meta.settings.selectedMap === m.id;
+          return (
+            <motion.button
+              key={m.id}
+              initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
+              whileHover={{ y: -4, scale: 1.02 }}
+              whileTap={{ scale: 0.97 }}
+              onMouseEnter={() => setHovered(m.id)}
+              onMouseLeave={() => setHovered(null)}
+              onClick={() => onSelect(m.id)}
+              className="neon-card p-5 text-left relative overflow-hidden"
+              style={sel ? { borderColor: m.accent, boxShadow: `0 0 24px ${m.accent}22` } : {}}
+            >
+              {/* ground preview */}
+              <div className="absolute bottom-0 left-0 right-0 h-8" style={{
+                background: `linear-gradient(180deg, transparent, ${m.ground})`,
+                borderTop: `1px solid ${m.accent}22`,
+              }} />
+              <div className="relative">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl"
+                    style={{ background: `${m.accent}15`, border: `1px solid ${m.accent}44` }}>
+                    {m.icon}
+                  </div>
+                  {sel && (
+                    <div className="neon-chip" style={{ color: m.accent, borderColor: m.accent }}>✓ DEFAULT</div>
+                  )}
+                </div>
+                <div className="font-display text-base tracking-wide mb-0.5" style={{ color: m.accent }}>{m.name}</div>
+                <div className="font-mono-neon text-[9px] neon-text-faint uppercase tracking-wider mb-2">{m.tagline}</div>
+                <div className="text-xs neon-text-dim leading-relaxed">{m.desc}</div>
+              </div>
+            </motion.button>
+          );
+        })}
+      </div>
+    </ScreenShell>
+  );
+}
+
 /* ============ SETTINGS ============ */
 export function SettingsScreen({ onBack }: { onBack: () => void }) {
   const clearData = useNeon(s => s.clearData);
@@ -515,6 +591,27 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
               ))}
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Default Map */}
+      <div className="neon-card p-5 mb-3">
+        <div className="font-display text-lg mb-4" style={{ color: 'var(--neon-yel)' }}>DEFAULT MAP</div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {MAPS.map(m => {
+            const sel = settings.selectedMap === m.id;
+            return (
+              <button key={m.id} onClick={() => set('selectedMap', m.id)}
+                className="neon-card p-3 text-left transition-all"
+                style={sel ? { borderColor: m.accent, boxShadow: `0 0 20px ${m.accent}33` } : {}}>
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-5 h-5 rounded-full" style={{ background: m.accent, boxShadow: `0 0 8px ${m.accent}` }} />
+                  <span className="font-display text-[11px] tracking-wide" style={{ color: m.accent }}>{m.name}</span>
+                </div>
+                <div className="text-[10px] neon-text-faint">{m.tagline}</div>
+              </button>
+            );
+          })}
         </div>
       </div>
 

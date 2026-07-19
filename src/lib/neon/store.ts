@@ -36,6 +36,7 @@ export interface GameSettings {
   damageNumbers: boolean;
   reducedMotion: boolean;
   particleQuality: 'low' | 'medium' | 'high';
+  selectedMap: string;
 }
 
 export const DEFAULT_SETTINGS: GameSettings = {
@@ -48,6 +49,7 @@ export const DEFAULT_SETTINGS: GameSettings = {
   damageNumbers: true,
   reducedMotion: false,
   particleQuality: 'high',
+  selectedMap: 'neon_grid',
 };
 
 export interface MetaData {

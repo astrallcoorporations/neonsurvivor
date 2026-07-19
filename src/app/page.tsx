@@ -10,9 +10,10 @@ import {
   StatsScreen, ArsenalScreen, BestiaryScreen,
   AchievementsScreen, ShopScreen, ClassesScreen, DailyScreen,
   ChallengesScreen, NewsScreen, HowToScreen, SettingsScreen,
+  MapSelectScreen,
 } from '@/components/neon/screens';
 
-type Screen = 'landing' | 'menu' | 'play' | 'stats' | 'arsenal' | 'bestiary' | 'achievements' | 'shop' | 'classes' | 'daily' | 'challenges' | 'news' | 'howto' | 'settings';
+type Screen = 'landing' | 'menu' | 'play' | 'stats' | 'arsenal' | 'bestiary' | 'achievements' | 'shop' | 'classes' | 'daily' | 'challenges' | 'news' | 'howto' | 'settings' | 'mapselect';
 
 export default function Home() {
   const [screen, setScreen] = useState<Screen>('landing');
@@ -20,6 +21,7 @@ export default function Home() {
 
   const play = useCallback((m: string) => { setMode(m); setScreen('play'); }, []);
   const back = useCallback(() => setScreen('menu'), []);
+  const goToMapSelect = useCallback((m: string) => { setMode(m); setScreen('mapselect'); }, []);
 
   return (
     <main className="relative min-h-screen w-full overflow-x-hidden flex flex-col" role="main" aria-label="Neon Survivor">
@@ -41,7 +43,7 @@ export default function Home() {
             <LandingScreen key="landing" onEnter={() => setScreen('menu')} />
           )}
           {screen === 'menu' && (
-            <MainMenu key="menu" onPlay={play} onNav={s => setScreen(s as Screen)} />
+            <MainMenu key="menu" onPlay={goToMapSelect} onNav={s => setScreen(s as Screen)} />
           )}
           {screen === 'stats' && <StatsScreen key="stats" onBack={back} />}
           {screen === 'arsenal' && <ArsenalScreen key="arsenal" onBack={back} />}
@@ -56,6 +58,9 @@ export default function Home() {
           {screen === 'news' && <NewsScreen key="news" onBack={back} />}
           {screen === 'howto' && <HowToScreen key="howto" onBack={back} />}
           {screen === 'settings' && <SettingsScreen key="settings" onBack={back} />}
+          {screen === 'mapselect' && (
+            <MapSelectScreen key="mapselect" onSelect={m => play(m)} onBack={back} />
+          )}
           {screen === 'play' && (
             <PlayScreen key="play" mode={mode} onExit={() => setScreen('menu')} />
           )}
