@@ -547,6 +547,120 @@ export function MapSelectScreen({ onSelect, onBack }: { onSelect: (mapId: string
   );
 }
 
+/* ============ FRIENDS ============ */
+export function FriendsScreen({ onBack }: { onBack: () => void }) {
+  const meta = useNeon(s => s.meta);
+  const setPlayerName = useNeon(s => s.setPlayerName);
+  const addFriend = useNeon(s => s.addFriend);
+  const removeFriend = useNeon(s => s.removeFriend);
+  const [newName, setNewName] = React.useState('');
+  const [newId, setNewId] = React.useState('');
+  const [editingName, setEditingName] = React.useState(false);
+  const [tempName, setTempName] = React.useState(meta.playerName);
+
+  return (
+    <ScreenShell icon="👥" title="FRIENDS" sub={`${meta.friends.length} CONNECTED`} onBack={onBack}>
+      {/* Your Player Card */}
+      <div className="neon-card p-5 mb-4">
+        <div className="font-display text-lg mb-3" style={{ color: 'var(--neon-cyan)' }}>YOUR PROFILE</div>
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-xl flex items-center justify-center text-2xl" style={{ background: 'rgba(34,230,255,.1)', border: '2px solid var(--neon-cyan)' }}>
+            {meta.playerName ? meta.playerName[0].toUpperCase() : '?'}
+          </div>
+          <div className="flex-1">
+            {editingName ? (
+              <div className="flex gap-2">
+                <input
+                  className="neon-input flex-1" value={tempName}
+                  onChange={e => setTempName(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') { setPlayerName(tempName); setEditingName(false); } }}
+                  maxLength={16} autoFocus
+                  style={{ background: 'rgba(10,8,30,.8)', border: '1px solid var(--neon-cyan)', padding: '4px 8px', borderRadius: 6, color: '#fff', fontSize: 14 }}
+                />
+                <button className="neon-btn-ghost px-3 py-1 text-xs" onClick={() => { setPlayerName(tempName); setEditingName(false); }}>SAVE</button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="font-display text-xl text-white">{meta.playerName || 'Unnamed'}</span>
+                <button className="neon-btn-ghost px-2 py-0.5 text-[10px]" onClick={() => { setTempName(meta.playerName); setEditingName(true); }}>EDIT</button>
+              </div>
+            )}
+            <div className="font-mono-neon text-[10px] neon-text-faint mt-1">ID: {meta.playerId}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Add Friend */}
+      <div className="neon-card p-5 mb-4">
+        <div className="font-display text-lg mb-3" style={{ color: 'var(--neon-grn)' }}>ADD FRIEND</div>
+        <div className="flex gap-2">
+          <input
+            className="neon-input flex-1" placeholder="Friend ID (e.g. PXXXXXXXX)"
+            value={newId}
+            onChange={e => setNewId(e.target.value.toUpperCase())}
+            maxLength={12}
+            style={{ background: 'rgba(10,8,30,.8)', border: '1px solid var(--neon-grn)', padding: '6px 10px', borderRadius: 6, color: '#fff', fontSize: 12 }}
+          />
+          <input
+            className="neon-input" placeholder="Nickname"
+            value={newName}
+            onChange={e => setNewName(e.target.value)}
+            maxLength={16}
+            style={{ background: 'rgba(10,8,30,.8)', border: '1px solid var(--neon-grn)', padding: '6px 10px', borderRadius: 6, color: '#fff', fontSize: 12, width: 140 }}
+          />
+          <button
+            className="neon-btn-ghost px-4 py-2 text-xs"
+            style={{ borderColor: 'var(--neon-grn)', color: 'var(--neon-grn)' }}
+            onClick={() => {
+              if (newId && newId !== meta.playerId) {
+                addFriend(newId, newName || newId);
+                setNewId(''); setNewName('');
+              }
+            }}
+          >ADD</button>
+        </div>
+        <div className="font-mono-neon text-[10px] neon-text-faint mt-2">
+          Share your ID with friends so they can add you back. Friends appear here with their latest stats.
+        </div>
+      </div>
+
+      {/* Friends List */}
+      <div className="neon-card p-5">
+        <div className="font-display text-lg mb-3" style={{ color: 'var(--neon-pur)' }}>
+          FRIENDS ({meta.friends.length})
+        </div>
+        {meta.friends.length === 0 ? (
+          <div className="text-center py-8 font-mono-neon text-sm neon-text-faint">
+            No friends yet. Add someone using their ID above!
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {meta.friends.map(f => (
+              <div key={f.id} className="flex items-center gap-3 p-3 rounded-lg" style={{ background: 'rgba(10,8,30,.6)', border: '1px solid rgba(255,255,255,.06)' }}>
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center text-lg font-bold" style={{ background: 'rgba(177,92,255,.15)', color: 'var(--neon-pur)' }}>
+                  {f.name ? f.name[0].toUpperCase() : '?'}
+                </div>
+                <div className="flex-1">
+                  <div className="font-display text-sm text-white">{f.name}</div>
+                  <div className="font-mono-neon text-[10px] neon-text-faint">ID: {f.id} · Runs: {f.totalRuns} · Best: LV{f.bestLevel} W{f.bestWave}</div>
+                </div>
+                <div className="font-mono-neon text-[10px]" style={{ color: f.lastSeen > Date.now() - 86400000 ? 'var(--neon-grn)' : 'var(--neon-red)' }}>
+                  {f.lastSeen > Date.now() - 3600000 ? 'ONLINE' : f.lastSeen > Date.now() - 86400000 ? 'TODAY' : 'OFFLINE'}
+                </div>
+                <button
+                  className="text-[10px] px-2 py-1 rounded"
+                  style={{ color: 'var(--neon-red)', border: '1px solid rgba(255,59,92,.3)' }}
+                  onClick={() => { if (confirm(`Remove ${f.name}?`)) removeFriend(f.id); }}
+                >REMOVE</button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </ScreenShell>
+  );
+}
+
 /* ============ SETTINGS ============ */
 export function SettingsScreen({ onBack }: { onBack: () => void }) {
   const clearData = useNeon(s => s.clearData);

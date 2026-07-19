@@ -2241,6 +2241,7 @@ function resetGame(mode){
       if(m.oneGun)P.unlocked=[P.unlocked[0]];}}
   P.hp=Math.min(P.hp,P.maxhp);
   if(window.World)World.reset();
+  if(window.loadMapEnv&&G.mapId)loadMapEnv(G.mapId);
   // reset tree ownership
   TREE.forEach(n=>n.owned=(n.id==='root'));
   for(const k in ACH_DONE)delete ACH_DONE[k];
@@ -2718,6 +2719,8 @@ function update(rdt){
   if(!Coop.active){if(Input.keys['arrowup'])iz-=1;if(Input.keys['arrowdown'])iz+=1;if(Input.keys['arrowleft'])ix-=1;if(Input.keys['arrowright'])ix+=1;}
   if(Input.joy.active){ix+=Input.joy.x;iz+=Input.joy.y;}
   const il=Math.hypot(ix,iz);if(il>0.05){ix/=il;iz/=il;P.mvx=ix;P.mvz=iz;}else{P.mvx=0;P.mvz=0;}
+  // Send input to host if online client
+  if(Net.connected&&!Net.isHost&&G.running){Net.sendInput({ix,iz,angle:P.aimAngle||0});}
   const wspd=(window.World&&World.weather)?World.weather.playerSpd:1;
   if(P.downed){P.vx=0;P.vz=0;}
   else if(P.dashT>0){P.dashT-=sdt;P.vx*=0.86;P.vz*=0.86;}
@@ -2811,6 +2814,15 @@ function drawR(shx,shz){
   const w=curWeapon();R.push(R.meshes.weapon_mdl?'weapon_mdl':'cube',P.x+P.aimX*34,26,P.z+P.aimZ*34,64,14,14,w.col[0],w.col[1],w.col[2],1.1,P.angle);
   if(Coop.active&&!P2.downed)R.push('sphere',P2.x,P2.y,P2.z,P2.radius*2.1,P2.radius*2.1,P2.radius*2.1,0.3,1,0.5,0.7,0);
   drawRemotePlayers();
+  if(window._envProps){
+    const viewR=1800;
+    for(let i=0;i<_envProps.length;i++){
+      const p=_envProps[i];
+      if(Math.abs(p.x-P.x)<viewR&&Math.abs(p.z-P.z)<viewR){
+        R.push(p.mesh,p.x,p.y,p.z,p.sx,p.sy,p.sz,p.r,p.g,p.b,p.em,p.rot);
+      }
+    }
+  }
   for(let i=0;i<enemies.length;i++){const e=enemies[i];let s=e.radius*1.9;
     let em=e.flash>0?2.8:(e.boss?1.0+Math.sin(G.t*0.01)*0.3:0.5);if(e.boss)s*=1+Math.sin(G.t*0.005)*0.04;if(e.elite&&!e.boss)em+=0.4;
     R.push(e.mesh,e.x,e.y,e.z,s,s,s,e.cr,e.cg,e.cb,em,e.spin);}
@@ -2953,15 +2965,58 @@ function wireUI(){
 function injectUI(){
   const css=document.createElement('style');
   css.textContent='#p2hud{position:absolute;left:14px;top:150px;z-index:4;font-size:12px;background:rgba(8,6,24,.7);padding:4px 8px;border-radius:6px;border:1px solid rgba(67,255,158,.4)}'+
-    '.classgrid,.shopgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;max-height:54vh;overflow:auto}';
+    '.classgrid,.shopgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;max-height:54vh;overflow:auto}'+
+    '#nethud{position:absolute;left:14px;top:190px;z-index:4;font-size:11px;background:rgba(8,6,24,.85);padding:6px 10px;border-radius:6px;border:1px solid rgba(34,230,255,.5);color:#b8c4d8;display:none}'+
+    '#nethud .room-code{color:#22e6ff;font-size:14px;font-weight:bold;letter-spacing:2px}'+
+    '#nethud .net-btn{background:rgba(34,230,255,.15);border:1px solid rgba(34,230,255,.4);color:#22e6ff;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:11px;margin:2px}'+
+    '#nethud .net-btn:hover{background:rgba(34,230,255,.3)}'+
+    '#nethud .net-btn.danger{color:#ff3b5c;border-color:rgba(255,59,92,.4);background:rgba(255,59,92,.15)}';
   document.head.appendChild(css);
   const menuCard=document.querySelector('#menu .card');
-  if(menuCard){const row=document.createElement('div');row.className='row';row.style.marginTop='8px';
+  if(menuCard){
+    // Online multiplayer row
+    const onRow=document.createElement('div');onRow.className='row';onRow.style.marginTop='8px';
+    const mkBtn=(label,cb,cls)=>{const b=document.createElement('button');b.className='btn'+(cls?' '+cls:'');b.style.cssText='width:auto;padding:8px 14px;font-size:11px';b.textContent=label;b.onclick=cb;return b;};
+    onRow.appendChild(mkBtn('ONLINE (HOST)',()=>{
+      const name=prompt('Your name:','Host');
+      if(!name)return;
+      Net.connect(name);
+      window._netLobbyCb=(msg)=>{
+        if(msg&&msg.type==='created'){
+          notify('Share code: '+msg.code,'var(--cyan)');
+        }
+      };
+    }));
+    onRow.appendChild(mkBtn('ONLINE (JOIN)',()=>{
+      const code=prompt('Enter 4-letter room code:');
+      if(!code)return;
+      const name=prompt('Your name:','Player');
+      if(!name)return;
+      Net.connect(name,code);
+    }));
+    menuCard.appendChild(onRow);
+    // Net HUD
+    const nh=document.createElement('div');nh.id='nethud';
+    nh.innerHTML='<div class="room-code"></div><div class="net-members"></div><div class="net-actions"></div>';
+    document.getElementById('hud')&&document.getElementById('hud').appendChild(nh);
+    // Old buttons
+    const row=document.createElement('div');row.className='row';row.style.marginTop='8px';
     const cb=document.createElement('button');cb.className='btn';cb.style.cssText='width:auto;padding:8px 14px;font-size:11px';
-    cb.textContent='CO-OP (press G in-run)';cb.onclick=()=>alert('Local co-op: start a run, then press G to add Player 2 (Arrow keys). Revive downed teammates by standing close.\\n\\nOnline multiplayer/matchmaking needs a server and is not part of this single-folder offline build.');
+    cb.textContent='CO-OP (press G in-run)';cb.onclick=()=>alert('Local co-op: start a run, then press G to add Player 2 (Arrow keys). Revive downed teammates by standing close.');
     const wb=document.createElement('button');wb.className='btn';wb.style.cssText='width:auto;padding:8px 14px;font-size:11px;border-color:#ff3b5c;color:#ffb3c0';
     wb.textContent='CLEAR DATA';wb.onclick=()=>{if(confirm('Erase ALL saved progress (credits, unlocks, classes, prestige, dailies)?'))clearAllData();};
-    row.appendChild(cb);row.appendChild(wb);menuCard.appendChild(row);}
+    row.appendChild(cb);row.appendChild(wb);menuCard.appendChild(row);
+    // Update net HUD
+    setInterval(()=>{
+      const nh=document.getElementById('nethud');if(!nh)return;
+      if(!Net.connected){nh.style.display='none';return;}
+      nh.style.display='block';
+      nh.querySelector('.room-code').textContent='ROOM: '+Net.room+(Net.isHost?' (HOST)':'');
+      nh.querySelector('.net-members').innerHTML=Net.members.map(m=>'<span style="color:'+(m.id==='host'?'#ffb347':'#43ff9e')+'">'+m.name+'</span>').join(' · ')+' · <span style="color:#666">'+Net.latency+'ms</span>';
+      nh.querySelector('.net-actions').innerHTML='<button class="net-btn danger" onclick="Net.disconnect();document.getElementById(\'nethud\').style.display=\'none\'">LEAVE</button>'+
+        (Net.isHost?'<button class="net-btn" onclick="if(confirm(\'Start game?\'))startGame()">START</button>':'');
+    },500);
+  }
 }
 function startEngine(){
   try{R.init();}catch(e){console.warn('WebGL2 fallback renderer unavailable',e);}
@@ -2970,6 +3025,37 @@ function startEngine(){
   buildModeButtons();wireUI();injectUI();refreshMetaUI();
   if(typeof updateHUD==='function'){const _uh=updateHUD;updateHUD=function(){_uh();paintCooldowns();};}
   try{R.setCam(P.x,P.z,0,0);}catch(e){}
+  // Host-side input processing for online multiplayer
+  Net._inputCb=(playerId,inputData)=>{
+    if(!Net.isHost)return;
+    let rp=Net._remotePlayers[playerId];
+    if(!rp){
+      rp={x:P.x+100,z:P.z,hp:100,maxhp:100,radius:24,angle:0,weapon:0,downed:false,y:26,
+        dmgMul:1,fireCD:0,invuln:0,cr:0.3,cg:1,cb:0.5};
+      Net._remotePlayers[playerId]=rp;
+    }
+    if(rp.downed)return;
+    const ix=inputData.ix||0,iz=inputData.iz||0;
+    const l=Math.hypot(ix,iz);
+    const nx=l>0.1?ix/l:0,nz=l>0.1?iz/l:0;
+    const sp=400;
+    rp.x+=nx*sp*0.016;rp.z+=nz*sp*0.016;
+    rp.x=Math.max(-HALF+30,Math.min(HALF-30,rp.x));
+    rp.z=Math.max(-HALF+30,Math.min(HALF-30,rp.z));
+    if(inputData.angle!=null)rp.angle=inputData.angle;
+    // Auto-fire for remote player
+    rp.fireCD-=0.016;
+    if(rp.fireCD<=0){
+      const w=WEAPONS[rp.weapon]||WEAPONS[0];
+      rp.fireCD=1/(w.rate*0.8);
+      const dmg=w.dmg*rp.dmgMul*(1+G.level*0.04);
+      const cnt=w.count||1;
+      for(let k=0;k<cnt;k++){
+        const off=(cnt>1)?(k-(cnt-1)/2)*w.spread:0;
+        spawnBullet(rp.x+Math.cos(rp.angle)*30,rp.z+Math.sin(rp.angle)*30,rp.angle+off,w,dmg);
+      }
+    }
+  };
   requestAnimationFrame(frame);
 }
 window.onGraphicsReady=function(){
@@ -3184,7 +3270,7 @@ addEventListener('keydown',e=>{if(e.key.toLowerCase()==='i'&&G.running)toggleInv
 Object.assign(window,{
   G,P,enemies,bullets,ebullets,orbs,particles,dmgnums,loots,drones,beams,rings,hazards,pickups,
   WEAPONS,ABILITIES,BOSSES,ETYPES,TREE,ITEMS,RELIC_POOL:window.RELIC_POOL,
-  Coop,P2,Input,Grid,R,FX,Audio
+  Coop,P2,Input,Grid,R,FX,Audio,Net
 });
 
 /* =================== GLB MODEL LOADER =================== */
@@ -3354,6 +3440,46 @@ async function loadModels(){
   }
 
   console.log('[GLB] All meshes:',Object.keys(R.meshes));
+
+  // Map-specific environment GLB loading
+  window._mapEnvMeshes={};
+  window._envProps=[];
+  const mapGLBMap={
+    neon_grid:'/assets/neon_survivor/map_neongrid.glb',
+    crimson_wastes:'/assets/neon_survivor/map_crimsonwastes.glb',
+    void_depths:'/assets/neon_survivor/map_voiddepths.glb',
+    toxic_sewers:'/assets/neon_survivor/map_toxicsewers.glb',
+    frozen_core:'/assets/neon_survivor/map_frozencore.glb',
+    solar_flare:'/assets/neon_survivor/map_solarflare.glb',
+  };
+  async function loadMapEnv(mapId){
+    const url=mapGLBMap[mapId];if(!url)return;
+    if(window._mapEnvMeshes[mapId])return;
+    await loadGLB(url,'map_'+mapId);
+    window._mapEnvMeshes[mapId]=true;
+    console.log('[GLB] Loaded map env for '+mapId);
+    scatterEnvProps(mapId);
+  }
+  function scatterEnvProps(mapId){
+    window._envProps=[];
+    const pfx='map_'+mapId+'_';
+    const keys=Object.keys(R.meshes).filter(k=>k.startsWith(pfx));
+    if(!keys.length)return;
+    const count=35+Math.floor(Math.random()*20);
+    const arenaR=2800;
+    for(let i=0;i<count;i++){
+      const k=keys[Math.floor(Math.random()*keys.length)];
+      const angle=Math.random()*Math.PI*2;
+      const dist=600+Math.random()*arenaR;
+      const x=Math.cos(angle)*dist;
+      const z=Math.sin(angle)*dist;
+      const scale=0.6+Math.random()*1.2;
+      const rot=Math.random()*Math.PI*2;
+      const hue=0.3+Math.random()*0.4;
+      window._envProps.push({mesh:k,x:0,y:20+Math.random()*30,z,sx:scale*40,sy:scale*40,sz:scale*40,r:hue*0.4,g:hue*0.8,b:1,em:0.6+Math.random()*0.5,rot});
+    }
+    console.log('[ENV] Spawned '+window._envProps.length+' props for '+mapId);
+  }
 }
 loadModels();
 

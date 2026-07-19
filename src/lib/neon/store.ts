@@ -26,6 +26,17 @@ export interface DailyQuest {
 }
 export interface MasteryEntry { level: number; xp: number; }
 
+export interface Friend {
+  id: string;
+  name: string;
+  addedAt: number;
+  lastSeen: number;
+  bestLevel: number;
+  bestWave: number;
+  bestScore: number;
+  totalRuns: number;
+}
+
 export interface GameSettings {
   masterVolume: number;
   musicVolume: number;
@@ -75,6 +86,9 @@ export interface MetaData {
   dailyDate: string;
   stats: MetaStats;
   settings: GameSettings;
+  playerId: string;
+  playerName: string;
+  friends: Friend[];
 }
 
 function defaultMeta(): MetaData {
@@ -86,21 +100,34 @@ function defaultMeta(): MetaData {
     dailyQuests: [], dailyProgress: {}, dailyDate: '',
     stats: { totalKills:0, totalRuns:0, totalBosses:0, bestTime:0, bestWave:0, bestLevel:0, bestScore:0, totalCredits:0, totalPlaytime:0 },
     settings: { ...DEFAULT_SETTINGS },
+    playerId: '',
+    playerName: '',
+    friends: [],
   };
+}
+
+function ensurePlayerId(m: MetaData): MetaData {
+  if (!m.playerId) {
+    m.playerId = 'P' + Math.random().toString(36).slice(2, 10).toUpperCase();
+  }
+  return m;
 }
 
 function loadMeta(): MetaData {
   if (typeof window === 'undefined') return defaultMeta();
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return defaultMeta();
+    if (!raw) return ensurePlayerId(defaultMeta());
     const parsed = JSON.parse(raw);
-    return {
+    return ensurePlayerId({
       ...defaultMeta(), ...parsed,
       stats: { ...defaultMeta().stats, ...(parsed.stats||{}) },
       settings: { ...DEFAULT_SETTINGS, ...(parsed.settings||{}) },
-    };
-  } catch { return defaultMeta(); }
+      friends: parsed.friends || [],
+      playerId: parsed.playerId || '',
+      playerName: parsed.playerName || '',
+    });
+  } catch { return ensurePlayerId(defaultMeta()); }
 }
 
 function saveMeta(m: MetaData) {
@@ -122,6 +149,10 @@ interface NeonState {
   doAscend: () => boolean;
   updateSettings: (patch: Partial<GameSettings>) => void;
   clearData: () => void;
+  setPlayerName: (name: string) => void;
+  addFriend: (id: string, name: string) => boolean;
+  removeFriend: (id: string) => void;
+  updateFriendStats: (id: string, stats: Partial<Pick<Friend, 'bestLevel'|'bestWave'|'bestScore'|'totalRuns'|'lastSeen'>>) => void;
   _set: (updater: (m: MetaData) => MetaData) => void;
 }
 
@@ -229,6 +260,40 @@ export const useNeon = create<NeonState>((set, get) => ({
     get()._set(prev => ({
       ...prev,
       settings: { ...prev.settings, ...patch },
+    }));
+  },
+
+  setPlayerName: (name) => {
+    get()._set(prev => ({ ...prev, playerName: name }));
+  },
+
+  addFriend: (id, name) => {
+    const m = get().meta;
+    if (m.friends.some(f => f.id === id)) return false;
+    if (m.friends.length >= 50) return false;
+    get()._set(prev => ({
+      ...prev,
+      friends: [...prev.friends, {
+        id, name, addedAt: Date.now(), lastSeen: Date.now(),
+        bestLevel: 0, bestWave: 0, bestScore: 0, totalRuns: 0,
+      }],
+    }));
+    return true;
+  },
+
+  removeFriend: (id) => {
+    get()._set(prev => ({
+      ...prev,
+      friends: prev.friends.filter(f => f.id !== id),
+    }));
+  },
+
+  updateFriendStats: (id, stats) => {
+    get()._set(prev => ({
+      ...prev,
+      friends: prev.friends.map(f =>
+        f.id === id ? { ...f, ...stats, lastSeen: Date.now() } : f
+      ),
     }));
   },
 

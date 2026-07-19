@@ -22,6 +22,7 @@ export function MainMenu({ onPlay, onNav }: { onPlay: (mode: string) => void; on
     { id: 'settings', label: 'SETTINGS', icon: '⚙️', color: 'var(--neon-txt-dim)' },
   ];
   const advancedNavs: { id: string; label: string; icon: string; color: string; badge?: boolean }[] = [
+    { id: 'friends', label: 'FRIENDS', icon: '👥', color: 'var(--neon-grn)' },
     { id: 'stats', label: 'STATS', icon: '📊', color: 'var(--neon-cyan)' },
     { id: 'arsenal', label: 'ARSENAL', icon: '🔫', color: 'var(--neon-mag)' },
     { id: 'bestiary', label: 'BESTIARY', icon: '👹', color: 'var(--neon-red)' },

@@ -436,6 +436,7 @@ const Bridge={
       const b=parseInt(gc.slice(5,7),16)/255;
       R.gl.clearColor(r,g,b,0);
     }
+    if(window.loadMapEnv)loadMapEnv(mapId);
   }
 };
 window.NeonBridge=Bridge;

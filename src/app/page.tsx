@@ -10,10 +10,10 @@ import {
   StatsScreen, ArsenalScreen, BestiaryScreen,
   AchievementsScreen, ShopScreen, ClassesScreen, DailyScreen,
   ChallengesScreen, NewsScreen, HowToScreen, SettingsScreen,
-  MapSelectScreen,
+  MapSelectScreen, FriendsScreen,
 } from '@/components/neon/screens';
 
-type Screen = 'landing' | 'menu' | 'play' | 'stats' | 'arsenal' | 'bestiary' | 'achievements' | 'shop' | 'classes' | 'daily' | 'challenges' | 'news' | 'howto' | 'settings' | 'mapselect';
+type Screen = 'landing' | 'menu' | 'play' | 'stats' | 'arsenal' | 'bestiary' | 'achievements' | 'shop' | 'classes' | 'daily' | 'challenges' | 'news' | 'howto' | 'settings' | 'mapselect' | 'friends';
 
 export default function Home() {
   const [screen, setScreen] = useState<Screen>('landing');
@@ -60,6 +60,7 @@ export default function Home() {
           {screen === 'news' && <NewsScreen key="news" onBack={back} />}
           {screen === 'howto' && <HowToScreen key="howto" onBack={back} />}
           {screen === 'settings' && <SettingsScreen key="settings" onBack={back} />}
+          {screen === 'friends' && <FriendsScreen key="friends" onBack={back} />}
           {screen === 'mapselect' && (
             <MapSelectScreen key="mapselect" onSelect={m => play(m)} onBack={back} />
           )}
