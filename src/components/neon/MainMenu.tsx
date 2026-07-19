@@ -19,11 +19,11 @@ export function MainMenu({ onPlay, onNav }: { onPlay: (mode: string) => void; on
   const coreNavs: { id: string; label: string; icon: string; color: string; badge?: boolean }[] = [
     { id: 'shop', label: 'SHOP', icon: '🛒', color: 'var(--neon-grn)' },
     { id: 'classes', label: 'CLASSES', icon: '⚡', color: 'var(--neon-pur)' },
-    { id: 'multiplayer', label: 'MULTIPLAYER', icon: '🌐', color: 'var(--neon-cyan)' },
+    { id: 'friends', label: 'FRIENDS', icon: '👥', color: 'var(--neon-cyan)' },
+    { id: 'multiplayer', label: 'MULTIPLAYER', icon: '🌐', color: 'var(--neon-mag)' },
     { id: 'settings', label: 'SETTINGS', icon: '⚙️', color: 'var(--neon-txt-dim)' },
   ];
   const advancedNavs: { id: string; label: string; icon: string; color: string; badge?: boolean }[] = [
-    { id: 'friends', label: 'FRIENDS', icon: '👥', color: 'var(--neon-grn)' },
     { id: 'stats', label: 'STATS', icon: '📊', color: 'var(--neon-cyan)' },
     { id: 'arsenal', label: 'ARSENAL', icon: '🔫', color: 'var(--neon-mag)' },
     { id: 'bestiary', label: 'BESTIARY', icon: '👹', color: 'var(--neon-red)' },
@@ -149,7 +149,7 @@ export function MainMenu({ onPlay, onNav }: { onPlay: (mode: string) => void; on
           </div>
 
           {/* core nav — only 3 essential buttons */}
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-5 gap-2">
             {coreNavs.map(n => (
               <button key={n.id} onClick={() => onNav(n.id)} className="neon-btn-ghost py-3 px-2 flex flex-col items-center gap-1.5 group relative">
                 <span className="text-xl group-hover:scale-110 transition" style={{ filter: `drop-shadow(0 0 6px ${n.color})` }}>{n.icon}</span>

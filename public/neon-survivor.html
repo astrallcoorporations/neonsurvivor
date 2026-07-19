@@ -1022,8 +1022,7 @@ const R={
     gl.uniform1f(this.progBg.u.uTime,G.t*0.001);
     gl.uniform2f(this.progBg.u.uRes,this.W,this.H);
     this.drawFS();
-    // ground (skip when Three.js renders district ground)
-    if(!(window.T&&T.ready)){
+    // ground
     gl.enable(gl.DEPTH_TEST);gl.depthMask(true);
     gl.useProgram(this.progGround);
     gl.uniformMatrix4fv(this.progGround.u.uVP,false,this.vp);
@@ -1042,7 +1041,6 @@ const R={
     const ga=G.mapTheme&&G.mapTheme.gridAlpha!=null?G.mapTheme.gridAlpha:1.0;
     gl.uniform1f(this.progGround.u.uGridAlpha,ga);
     this.drawGround();
-    }
     // instanced meshes
     gl.useProgram(this.progMesh);
     gl.uniformMatrix4fv(this.progMesh.u.uView,false,this.view);
@@ -2813,9 +2811,9 @@ function draw(){
 function drawR(shx,shz){
   R.setCam(P.x,P.z,shx,shz);R.begin();
   const pulse=0.5+Math.sin(G.t*0.006)*0.2+(P.invuln>0?0.5:0);
-  R.push('sphere',P.x,P.y,P.z,P.radius*2.2,P.radius*2.2,P.radius*2.2,P.downed?0.6:1,P.downed?0.2:1,P.downed?0.3:1,pulse,0);
+  R.push(R.meshes.player_ship||'sphere',P.x,P.y,P.z,P.radius*2.2,P.radius*2.2,P.radius*2.2,P.downed?0.6:1,P.downed?0.2:1,P.downed?0.3:1,pulse,0);
   const w=curWeapon();R.push(R.meshes.weapon_mdl?'weapon_mdl':'cube',P.x+P.aimX*34,26,P.z+P.aimZ*34,64,14,14,w.col[0],w.col[1],w.col[2],1.1,P.angle);
-  if(Coop.active&&!P2.downed)R.push('sphere',P2.x,P2.y,P2.z,P2.radius*2.1,P2.radius*2.1,P2.radius*2.1,0.3,1,0.5,0.7,0);
+  if(Coop.active&&!P2.downed)R.push(R.meshes.player_ship||'sphere',P2.x,P2.y,P2.z,P2.radius*2.1,P2.radius*2.1,P2.radius*2.1,0.3,1,0.5,0.7,0);
   drawRemotePlayers();
   if(window._envProps){
     const viewR=1800;
@@ -3399,22 +3397,6 @@ async function loadModels(){
   window._glbPlayerLoaded=!!R.meshes.player_ship;
   window._glbEnemyLoaded=!!R.meshes.enemy;
   window._glbBossLoaded=!!R.meshes.boss;
-
-  // Player mesh swap
-  if(R.meshes.player_ship&&typeof drawR==='function'){
-    const _odr=window.drawR;
-    window.drawR=function(shx,shz){
-      const _op=R.push.bind(R);
-      R.push=function(mesh,x,y,z,sx,sy,sz,r,g,b,em,rot){
-        if(mesh==='sphere'){
-          _op('player_ship',x,y,z,sx*1.1,sy*1.1,sz*1.1,r,g,b,em,rot);
-        } else { _op(mesh,x,y,z,sx,sy,sz,r,g,b,em,rot); }
-      };
-      _odr(shx,shz);
-      R.push=_op;
-    };
-    console.log('[GLB] Player mesh swap active');
-  }
 
   // Per-type enemy mesh swap — each enemy type gets its own GLB model
   const enemyMeshMap={
