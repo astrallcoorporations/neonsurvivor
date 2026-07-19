@@ -2675,13 +2675,14 @@ function drawR(shx,shz){
   R.setCam(P.x,P.z,shx,shz);R.begin();
   const pulse=0.5+Math.sin(G.t*0.006)*0.2+(P.invuln>0?0.5:0);
   R.push('sphere',P.x,P.y,P.z,P.radius*2.2,P.radius*2.2,P.radius*2.2,P.downed?0.6:1,P.downed?0.2:1,P.downed?0.3:1,pulse,0);
-  const w=curWeapon();R.push('cube',P.x+P.aimX*34,26,P.z+P.aimZ*34,64,14,14,w.col[0],w.col[1],w.col[2],1.1,P.angle);
+  const w=curWeapon();R.push(R.meshes.weapon_mdl?'weapon_mdl':'cube',P.x+P.aimX*34,26,P.z+P.aimZ*34,64,14,14,w.col[0],w.col[1],w.col[2],1.1,P.angle);
   if(Coop.active&&!P2.downed)R.push('sphere',P2.x,P2.y,P2.z,P2.radius*2.1,P2.radius*2.1,P2.radius*2.1,0.3,1,0.5,0.7,0);
   for(let i=0;i<enemies.length;i++){const e=enemies[i];let s=e.radius*1.9;
     let em=e.flash>0?2.8:(e.boss?1.0+Math.sin(G.t*0.01)*0.3:0.5);if(e.boss)s*=1+Math.sin(G.t*0.005)*0.04;if(e.elite&&!e.boss)em+=0.4;
     R.push(e.mesh,e.x,e.y,e.z,s,s,s,e.cr,e.cg,e.cb,em,e.spin);}
-  for(let i=0;i<drones.length;i++){const dr=drones[i];const c=dr.def.col;R.push(dr.def.mesh||'cube',dr.x,dr.y||40,dr.z,26,26,26,c[0],c[1],c[2],1,dr.ang||0);}
-  for(let i=0;i<loots.length;i++){const l=loots[i];const c=hex3(RAR[l.rar].c);R.push('cube',l.x,l.y||20,l.z,30,30,30,c[0],c[1],c[2],1.4,l.t||0);}
+  for(let i=0;i<drones.length;i++){const dr=drones[i];const c=dr.def.col;R.push(R.meshes.enemy_drone||dr.def.mesh||'cube',dr.x,dr.y||40,dr.z,26,26,26,c[0],c[1],c[2],1,dr.ang||0);}
+  for(let i=0;i<loots.length;i++){const l=loots[i];const c=hex3(RAR[l.rar].c);
+    R.push(R.meshes.pickup_xp||'diamond',l.x,l.y||20,l.z,30,30,30,c[0],c[1],c[2],1.4,l.t||0);}
   R.render();
 }
 
@@ -3149,6 +3150,7 @@ async function loadModels(){
   window._glbEnemyLoaded=!!R.meshes.enemy;
   window._glbBossLoaded=!!R.meshes.boss;
 
+  // Player mesh swap
   if(R.meshes.player_ship&&typeof drawR==='function'){
     const _odr=window.drawR;
     window.drawR=function(shx,shz){
@@ -3164,14 +3166,32 @@ async function loadModels(){
     console.log('[GLB] Player mesh swap active');
   }
 
-  if(R.meshes.enemy){
-    Object.keys(ETYPES).forEach(k=>{ETYPES[k].mesh='enemy';});
-    console.log('[GLB] Enemy mesh swap active');
-  }
+  // Per-type enemy mesh swap — each enemy type gets its own GLB model
+  const enemyMeshMap={
+    grunt:'enemy_enemy_grunt',
+    fast:'enemy_enemy_fast',
+    tank:'enemy_enemy_tank',
+    exploder:'enemy_enemy_exploder',
+    shooter:'enemy_enemy_shooter',
+    sniper:'enemy_enemy_sniper',
+    drone:'enemy_enemy_drone',
+  };
+  let swappedCount=0;
+  Object.keys(enemyMeshMap).forEach(k=>{
+    const meshKey=enemyMeshMap[k];
+    if(R.meshes[meshKey]&&ETYPES[k]){
+      ETYPES[k].mesh=meshKey;
+      swappedCount++;
+    } else if(R.meshes.enemy&&ETYPES[k]){
+      ETYPES[k].mesh='enemy';
+    }
+  });
+  console.log('[GLB] Enemy per-type mesh swap: '+swappedCount+'/'+Object.keys(ETYPES).length+' types mapped');
 
+  // Boss mesh swap
   if(R.meshes.boss){
     BOSSES.forEach(b=>{b.mesh='boss';});
-    console.log('[GLB] Boss mesh swap active');
+    console.log('[GLB] Boss mesh swap active (merged)');
   }
 
   console.log('[GLB] All meshes:',Object.keys(R.meshes));
