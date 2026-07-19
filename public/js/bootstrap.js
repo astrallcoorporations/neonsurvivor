@@ -395,6 +395,12 @@ const Bridge={
     if(s.bloom!=null&&window.R){R.bloom=!!s.bloom;}
     // scanlines
     if(s.scanlines!=null){const el=document.getElementById('scanlines');if(el)el.style.display=s.scanlines?'':'none';}
+    // pixel mode: low-res retro aesthetic
+    if(s.pixelMode!=null){
+      const pg=document.getElementById('pixelgrid');if(pg)pg.style.display=s.pixelMode?'':'none';
+      if(window.R&&s.pixelMode){R.dpr=0.5;R.resize();}
+      else if(window.R){R.dpr=Math.min(window.devicePixelRatio||1,1.75);R.resize();}
+    }
     // screen shake global flag
     if(s.screenShake!=null&&window.G){G.noShake=!s.screenShake;}
     // damage numbers

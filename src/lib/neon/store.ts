@@ -39,6 +39,7 @@ export interface GameSettings {
   selectedMap: string;
   autoAbilities: boolean;
   autoUpgrade: boolean;
+  pixelMode: boolean;
 }
 
 export const DEFAULT_SETTINGS: GameSettings = {
@@ -54,6 +55,7 @@ export const DEFAULT_SETTINGS: GameSettings = {
   selectedMap: 'neon_grid',
   autoAbilities: false,
   autoUpgrade: false,
+  pixelMode: false,
 };
 
 export interface MetaData {

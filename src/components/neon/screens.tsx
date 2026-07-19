@@ -577,6 +577,7 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
         <div className="space-y-3">
           <ToggleRow label="BLOOM" value={settings.bloom} onChange={v => set('bloom', v)} color="var(--neon-mag)" />
           <ToggleRow label="CRT SCANLINES" value={settings.scanlines} onChange={v => set('scanlines', v)} color="var(--neon-pur)" />
+          <ToggleRow label="PIXEL MODE" value={settings.pixelMode} onChange={v => set('pixelMode', v)} color="var(--neon-yel)" description="Low-res retro rendering like classic arcade games" />
           <ToggleRow label="SCREEN SHAKE" value={settings.screenShake} onChange={v => set('screenShake', v)} color="var(--neon-cyan)" />
           <ToggleRow label="DAMAGE NUMBERS" value={settings.damageNumbers} onChange={v => set('damageNumbers', v)} color="var(--neon-yel)" />
           <div className="flex items-center justify-between py-2">
@@ -683,22 +684,25 @@ function SliderRow({ label, value, onChange, color }: { label: string; value: nu
   );
 }
 
-function ToggleRow({ label, value, onChange, color }: { label: string; value: boolean; onChange: (v: boolean) => void; color: string }) {
+function ToggleRow({ label, value, onChange, color, description }: { label: string; value: boolean; onChange: (v: boolean) => void; color: string; description?: string }) {
   return (
-    <div className="flex items-center justify-between py-2">
-      <span className="font-mono-neon text-[11px] tracking-widest neon-text-dim">{label}</span>
-      <button
-        onClick={() => onChange(!value)}
-        className="neon-chip cursor-pointer transition-all"
-        style={value
-          ? { color, borderColor: color, boxShadow: `0 0 10px ${color}44` }
-          : { opacity: 0.45 }}
-        role="switch"
-        aria-checked={value}
-        aria-label={label}
-      >
-        {value ? 'ON' : 'OFF'}
-      </button>
+    <div className="py-2">
+      <div className="flex items-center justify-between">
+        <span className="font-mono-neon text-[11px] tracking-widest neon-text-dim">{label}</span>
+        <button
+          onClick={() => onChange(!value)}
+          className="neon-chip cursor-pointer transition-all"
+          style={value
+            ? { color, borderColor: color, boxShadow: `0 0 10px ${color}44` }
+            : { opacity: 0.45 }}
+          role="switch"
+          aria-checked={value}
+          aria-label={label}
+        >
+          {value ? 'ON' : 'OFF'}
+        </button>
+      </div>
+      {description && <div className="text-[9px] neon-text-faint mt-1 tracking-wide">{description}</div>}
     </div>
   );
 }
