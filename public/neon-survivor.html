@@ -601,7 +601,7 @@ const G = {
 let enemies=[], bullets=[], ebullets=[], orbs=[], particles=[], dmgnums=[], loots=[], drones=[], beams=[], rings=[], hazards=[], pickups=[];
 
 // input
-const Input={ keys:{}, mx:0, my:0, mdown:false, aimX:1, aimZ:0, aimWX:0, aimWZ:0, joy:{x:0,y:0,active:false}, touchFire:false };
+const Input={ keys:{}, mx:0, my:0, mdown:false, aimX:1, aimZ:0, aimWX:0, aimWZ:0, joy:{x:0,y:0,active:false,aimX:0,aimY:0,aiming:false}, touchFire:false };
 
 /* ----------------------------- MATH (mat4) ----------------------------- */
 const M4={
@@ -1078,11 +1078,12 @@ const FX={
 
 /* =========================== POOLS =========================== */
 const bulletPool=[],ebulletPool=[],partPool=[],orbPool=[],dmgPool=[];
+const POOL_CAP=800;
 function bGet(){return bulletPool.pop()||{hit:new Set()};}
 function eGet(){return ebulletPool.pop()||{};}
 function pGet(){return partPool.pop()||{};}
 function oGet(){return orbPool.pop()||{};}
-function swapKill(arr,i,pool){pool.push(arr[i]);arr[i]=arr[arr.length-1];arr.pop();}
+function swapKill(arr,i,pool){if(pool.length<POOL_CAP)pool.push(arr[i]);arr[i]=arr[arr.length-1];arr.pop();}
 
 /* =========================== SPATIAL GRID (enemies) =========================== */
 const Grid={cell:240, map:new Map(),
@@ -1117,6 +1118,7 @@ function resetPlayer(){
   P.relics=[];
   P._masteryXpAcc=0;
   P._lastMasteryKill=0;
+  P.weaponKick=0;
 }
 
 /* =========================== WEAPONS (11) =========================== */
@@ -1143,7 +1145,7 @@ function fireWeapon(dt){
   if(P.berserk&&P.hp<P.maxhp*0.4)rateMul*=1.25;
   P.fireCD-=dt*rateMul;
   if(P.fireCD>0)return;
-  P.fireCD=1/w.rate;P.muzzleT=0.07;
+  P.fireCD=1/w.rate;P.muzzleT=0.07;P.weaponKick=3;
   const ax=Math.cos(P.angle),az=Math.sin(P.angle);
   Audio.shoot(w.sfx);
   let dmg=w.dmg*P.dmgMul;
@@ -1264,7 +1266,9 @@ function spawnDmgNum(x,z,v,crit){
   d.vy=crit?130:90;dmgnums.push(d);
 }
 
+const MAX_PARTICLES=600;
 function spawnParticle(x,z,y,vx,vy,vz,life,size,r,g,b,mesh,grav){
+  if(particles.length>=MAX_PARTICLES)return;
   const p=pGet();p.x=x;p.z=z;p.y=y;p.vx=vx;p.vy=vy;p.vz=vz;p.life=life;p.max=life;p.size=size;
   p.r=r;p.g=g;p.b=b;p.mesh=mesh||'diamond';p.grav=grav?900:0;p.rot=rand(0,TWO_PI);p.vr=rand(-8,8);particles.push(p);
 }
@@ -1372,8 +1376,8 @@ function updateEnemies(dt){
     if(dist2(e.x,e.z,P.x,P.z)<rr*rr){
       e.touchCD-=dt;
       if(e.touchCD<=0){e.touchCD=0.5;
-        if(e.boom){explode(e.x,e.z,170,e.dmg*1.6,1,0.5,0.1);hurtPlayer(e.dmg);e.dead=true;killEnemy(e);}
-        else hurtPlayer(e.dmg);
+        if(e.boom){explode(e.x,e.z,170,e.dmg*1.6,1,0.5,0.1);hurtPlayer(e.dmg,e);e.dead=true;killEnemy(e);}
+        else hurtPlayer(e.dmg,e);
         if(P.thorns>0)damageEnemy(e,P.thorns,false,0,0,0);
       }
     }
@@ -1391,15 +1395,16 @@ function updateEBullets(dt){
       const sp=Math.hypot(b.vx,b.vz);b.vx=Math.cos(na)*sp;b.vz=Math.sin(na)*sp;}
     const es=G.enemySlow;b.x+=b.vx*dt*es;b.z+=b.vz*dt*es;
     let dead=b.life<=0||Math.abs(b.x)>HALF||Math.abs(b.z)>HALF;
-    if(!dead&&P.invuln<=0){const rr=b.size+P.radius;if(dist2(b.x,b.z,P.x,P.z)<rr*rr){hurtPlayer(b.dmg);dead=true;}}
+    if(!dead&&P.invuln<=0){const rr=b.size+P.radius;if(dist2(b.x,b.z,P.x,P.z)<rr*rr){hurtPlayer(b.dmg,b);dead=true;}}
     if(dead)swapKill(ebullets,i,ebulletPool);}
 }
 
-function hurtPlayer(dmg){
+function hurtPlayer(dmg,src){
   if(P.invuln>0||G.over)return;
   dmg=Math.max(1,dmg-P.armor);
   P.hp-=dmg;P.invuln=0.45;G.shake=Math.min(G.shake+10,28);
   G.flashColor=[1,0.1,0.2];G.flashA=0.5;
+  if(src){G.hitDir=Math.atan2(P.z-src.z,P.x-src.x);G.hitDirTimer=0.4;}
   Audio.hit();
   for(let i=0;i<8;i++)spawnParticle(P.x,P.z,30,rand(-1,1)*200,rand(60,200),rand(-1,1)*200,0.3,9,1,0.2,0.3,'cube',true);
   if(P.hp<=0){P.hp=0;onPlayerDown();}
@@ -1409,13 +1414,21 @@ function hurtPlayer(dmg){
 function killEnemy(e){
   if(e.dead&&e._counted)return;
   e.dead=true;e._counted=true;G.kills++;G.score+=e.boss?5000:(e.elite?120:20);
-  for(let i=0;i<(e.boss?60:e.elite?20:8);i++){const a=rand(0,TWO_PI),s=rand(120,e.boss?700:420);
+  // Slow-mo on elite kill
+  if(e.elite&&!e.boss){G.globalSlow=0.3;G.slowT=0.25;}
+  G.killStreak++;G.killStreakTimer=2.5;
+  if(G.killStreak>G.killStreakMax)G.killStreakMax=G.killStreak;
+  if(G.killStreak===10)notify('KILL STREAK ×10!','var(--yel)');
+  else if(G.killStreak===25)notify('KILL STREAK ×25!','var(--mag)');
+  else if(G.killStreak===50)notify('KILL STREAK ×50!','var(--red)');
+  else if(G.killStreak===100)notify('UNSTOPPABLE ×100!','var(--cyan)');
+  for(let i=0;i<(e.boss?30:e.elite?10:5);i++){const a=rand(0,TWO_PI),s=rand(120,e.boss?700:420);
     spawnParticle(e.x,e.z,e.radius,Math.cos(a)*s,rand(80,360),Math.sin(a)*s,rand(0.3,0.8),rand(8,e.boss?30:16),e.cr,e.cg,e.cb,'cube',true);}
   rings.push({x:e.x,z:e.z,r:10,max:e.boss?420:e.radius*4,life:0.5,maxlife:0.5,r0:e.cr,g0:e.cg,b0:e.cb});
   // xp orbs
   const orbN=Math.min(e.xp,e.boss?40:12);
   for(let i=0;i<orbN;i++)spawnOrb(e.x+rand(-e.radius,e.radius),e.z+rand(-e.radius,e.radius),Math.max(1,Math.floor(e.xp/orbN)));
-  // loot
+  // loot (base drops only — item system handled by wrapper)
   let lootChance=e.boss?1:e.elite?0.7:0.02+P.luck*0.01;
   if(Math.random()<lootChance)dropLoot(e.x,e.z,e.boss?'mythic':e.elite?null:null);
   if(e.boom)explode(e.x,e.z,160,e.dmg,1,0.5,0.1);
@@ -2046,6 +2059,8 @@ function resetGame(mode){
     spawnTimer:1,waveTimer:0,bossActive:null,bossesKilled:0,bossIndex:0,enemyCap:300,
     dmgDealtWindow:[],dps:0,shake:0,flashColor:null,flashA:0,skillPoints:0,frame:0,levelOpen:false,
     globalSlow:1,slowT:0,enemySlow:1,enemySlowT:0,modeMul:1,_loot:0,_mythic:0,_spentSP:0,_abUses:0,
+    killStreak:0,killStreakTimer:0,killStreakMax:0,
+    hitDir:0,hitDirTimer:0,
     challenge:null});
   // mode tuning
   if(mode==='endless'){G.nextBossTime=70;}
@@ -2313,6 +2328,100 @@ function update(rdt){
   if(G.slowT>0){G.slowT-=rdt;if(G.slowT<=0)G.globalSlow=1;else G.globalSlow=lerp(G.globalSlow,1,rdt*1.5);}
   if(G.enemySlowT>0){G.enemySlowT-=rdt;if(G.enemySlowT<=0)G.enemySlow=1;}
   G.gameTime+=sdt;
+
+  // Gamepad polling
+  const gamepads=navigator.getGamepads?navigator.getGamepads():[];
+  for(let gp=0;gp<gamepads.length;gp++){
+    const pad=gamepads[gp];if(!pad)continue;
+    // Left stick: movement (dead zone 0.2)
+    const lx=pad.axes[0]||0,ly=pad.axes[1]||0;
+    const lmag=Math.sqrt(lx*lx+ly*ly);
+    if(lmag>0.2){
+      Input.joy.active=true;
+      Input.joy.x=lx/Math.max(lmag,1);
+      Input.joy.y=ly/Math.max(lmag,1);
+    }else if(gp===0){ // Only clear for primary gamepad
+      // Don't clear if keyboard is active
+      if(!Input.keys['w']&&!Input.keys['s']&&!Input.keys['a']&&!Input.keys['d']){
+        Input.joy.x=0;Input.joy.y=0;
+        if(Math.abs(lx)<0.1&&Math.abs(ly)<0.1)Input.joy.active=false;
+      }
+    }
+    // Right stick: aim (for aim assist / secondary fire direction)
+    const rx=pad.axes[2]||0,ry=pad.axes[3]||0;
+    const rmag=Math.sqrt(rx*rx+ry*ry);
+    if(rmag>0.3){
+      Input.joy.aimX=rx;Input.joy.aimY=ry;Input.joy.aiming=true;
+    }else{
+      Input.joy.aiming=false;
+    }
+    // Buttons
+    // A/X button (index 0): Dash
+    if(pad.buttons[0]&&!pad.buttons[0]._prev&&pad.buttons[0].pressed){
+      try{window.dispatchEvent(new KeyboardEvent('keydown',{key:' ',code:'Space',bubbles:true}));}catch{}
+    }
+    if(pad.buttons[0])pad.buttons[0]._prev=pad.buttons[0].pressed;
+
+    // Trigger buttons: weapon fire / overdrive
+    // RT (index 7): Overdrive
+    const rt=pad.buttons[7]?pad.buttons[7].value:0;
+    if(rt>0.5){Input.keys['mouse0']=true;}
+
+    // Shoulder buttons: ability keys
+    // LB (index 4): Ability 1
+    if(pad.buttons[4]&&!pad.buttons[4]._prev&&pad.buttons[4].pressed){
+      try{window.dispatchEvent(new KeyboardEvent('keydown',{key:'1',bubbles:true}));}catch{}
+    }
+    if(pad.buttons[4])pad.buttons[4]._prev=pad.buttons[4].pressed;
+    // RB (index 5): Ability 2
+    if(pad.buttons[5]&&!pad.buttons[5]._prev&&pad.buttons[5].pressed){
+      try{window.dispatchEvent(new KeyboardEvent('keydown',{key:'2',bubbles:true}));}catch{}
+    }
+    if(pad.buttons[5])pad.buttons[5]._prev=pad.buttons[5].pressed;
+
+    // D-pad: abilities 3-6
+    if(pad.buttons[12]&&!pad.buttons[12]._prev&&pad.buttons[12].pressed){
+      try{window.dispatchEvent(new KeyboardEvent('keydown',{key:'3',bubbles:true}));}catch{}
+    }
+    if(pad.buttons[12])pad.buttons[12]._prev=pad.buttons[12].pressed;
+    if(pad.buttons[13]&&!pad.buttons[13]._prev&&pad.buttons[13].pressed){
+      try{window.dispatchEvent(new KeyboardEvent('keydown',{key:'4',bubbles:true}));}catch{}
+    }
+    if(pad.buttons[13])pad.buttons[13]._prev=pad.buttons[13].pressed;
+    if(pad.buttons[14]&&!pad.buttons[14]._prev&&pad.buttons[14].pressed){
+      try{window.dispatchEvent(new KeyboardEvent('keydown',{key:'5',bubbles:true}));}catch{}
+    }
+    if(pad.buttons[14])pad.buttons[14]._prev=pad.buttons[14].pressed;
+    if(pad.buttons[15]&&!pad.buttons[15]._prev&&pad.buttons[15].pressed){
+      try{window.dispatchEvent(new KeyboardEvent('keydown',{key:'6',bubbles:true}));}catch{}
+    }
+    if(pad.buttons[15])pad.buttons[15]._prev=pad.buttons[15].pressed;
+
+    // Start (index 9): Pause
+    if(pad.buttons[9]&&!pad.buttons[9]._prev&&pad.buttons[9].pressed){
+      togglePause();
+    }
+    if(pad.buttons[9])pad.buttons[9]._prev=pad.buttons[9].pressed;
+
+    break; // Only handle primary gamepad
+  }
+
+  // Aim assist for controller
+  if(Input.joy.aiming){
+    const aimRange=400;
+    let bestEnemy=null,bestDist=aimRange*aimRange;
+    Grid.query(P.x,P.z,aimRange,e=>{if(e.dead)return;
+      const d=dist2(P.x,P.z,e.x,e.z);if(d<bestDist){bestDist=d;bestEnemy=e;}});
+    if(bestEnemy){
+      const dx=bestEnemy.x-P.x,dz=bestEnemy.z-P.z;
+      const dist=Math.sqrt(dx*dx+dz*dz);
+      if(dist>0){
+        Input.joy.aimX=Input.joy.aimX*0.8+(dx/dist)*0.2;
+        Input.joy.aimY=Input.joy.aimY*0.8+(dz/dist)*0.2;
+      }
+    }
+  }
+
   let ix=0,iz=0;
   if(Input.keys['w'])iz-=1; if(Input.keys['s'])iz+=1; if(Input.keys['a'])ix-=1; if(Input.keys['d'])ix+=1;
   if(!Coop.active){if(Input.keys['arrowup'])iz-=1;if(Input.keys['arrowdown'])iz+=1;if(Input.keys['arrowleft'])ix-=1;if(Input.keys['arrowright'])ix+=1;}
@@ -2340,10 +2449,14 @@ function update(rdt){
   updateLoot(sdt);updateParticles(sdt);updateDmgNums(sdt);updateHazards(sdt);updateRings(sdt);updateBeams(sdt);
   updateP2(sdt);
   if(window.World&&World.update)World.update(sdt,G,P,HALF);
-  const cut=G.t-2000;while(G.dmgDealtWindow.length&&G.dmgDealtWindow[0][0]<cut)G.dmgDealtWindow.shift();
-  let sum=0;for(let i=0;i<G.dmgDealtWindow.length;i++)sum+=G.dmgDealtWindow[i][1];G.dps=Math.round(sum/2);
+  const cut=G.t-2000;const dw=G.dmgDealtWindow;let di=0;while(di<dw.length&&dw[di][0]<cut)di++;
+  if(di>0){if(di<dw.length)dw.copyWithin(0,di);dw.length-=di;}
+  let sum=0;for(let i=0;i<dw.length;i++)sum+=dw[i][1];G.dps=Math.round(sum/2);
   if(G.shake>0){G.shake-=rdt*40;if(G.shake<0)G.shake=0;}
   if(G.flashA>0)G.flashA-=rdt*2;
+  if(G.killStreakTimer>0){G.killStreakTimer-=rdt;if(G.killStreakTimer<=0)G.killStreak=0;}
+  if(G.hitDirTimer>0)G.hitDirTimer-=rdt;
+  if(P.weaponKick>0)P.weaponKick*=0.85;
   if(Audio.music)Audio.music();
   if((G.frame&31)===0&&typeof checkAch==='function')checkAch();
   G.frame++;
@@ -2361,7 +2474,7 @@ function draw(){
       T.pushNeon('tower',b.x,h*0.5,b.z,55*b.scale,h,55*b.scale,0.06,0.13,0.42,b.rot);}}
     // player core
     {const wc=(WEAPONS[P.weapon]||{col:[0.3,0.95,1]}).col,pax=Math.cos(P.angle),paz=Math.sin(P.angle),R=P.radius;
-     const rk=(P.muzzleT||0)/0.07*12;   // recoil kick-back
+     const rk=(P.muzzleT||0)/0.07*12+(P.weaponKick||0);   // recoil kick-back
      T.pushNeon('octa',P.x,33,P.z,R*1.55,R*2.0,R*1.55,0.30,0.9,1,G.t*0.0025);          // hull
      T.pushNeon('ico',P.x,37,P.z,R*0.9,R*0.9,R*0.9,1,1,1,-G.t*0.004);                    // core
      T.pushNeon('box',P.x+pax*(46-rk),30,P.z+paz*(46-rk),92,16,18,wc[0],wc[1],wc[2],-P.angle);     // barrel
@@ -2458,6 +2571,26 @@ function drawFX(){
   // low hp vignette
   if(P.hp/P.maxhp<0.3&&G.running){const p=0.3+Math.sin(G.t*0.01)*0.2;const g=ctx.createRadialGradient(FX.W/2,FX.H/2,FX.H*0.3,FX.W/2,FX.H/2,FX.H*0.7);
     g.addColorStop(0,'rgba(255,0,40,0)');g.addColorStop(1,'rgba(255,0,40,'+(p*0.5)+')');ctx.fillStyle=g;ctx.fillRect(0,0,FX.W,FX.H);}
+  // Directional damage indicator
+  if(G.hitDirTimer>0&&G.running){
+    const a=G.hitDirTimer/0.4;
+    const cx=FX.W/2+Math.cos(G.hitDir)*FX.W*0.35;
+    const cy=FX.H/2+Math.sin(G.hitDir)*FX.H*0.35;
+    const g=ctx.createRadialGradient(cx,cy,0,cx,cy,FX.H*0.4);
+    g.addColorStop(0,'rgba(255,30,60,'+(a*0.6)+')');
+    g.addColorStop(1,'rgba(255,30,60,0)');
+    ctx.fillStyle=g;ctx.fillRect(0,0,FX.W,FX.H);
+  }
+  // Kill streak display
+  if(G.killStreak>5){
+    ctx.fillStyle=G.killStreak>=50?'#ff3b5c':G.killStreak>=25?'#ff2bd6':'#ffe24a';
+    ctx.font='900 18px Orbitron,sans-serif';
+    ctx.textAlign='center';
+    ctx.fillText('\u00d7'+G.killStreak,FX.W/2,FX.H*0.15);
+    ctx.font='900 10px Share Tech Mono,monospace';
+    ctx.fillText('KILL STREAK',FX.W/2,FX.H*0.15+18);
+    ctx.textAlign='left';
+  }
 }
 
 /* ======================= LOOP + BOOT ======================= */

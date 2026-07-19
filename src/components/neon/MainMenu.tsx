@@ -143,8 +143,9 @@ export function MainMenu({ onPlay, onNav }: { onPlay: (mode: string) => void; on
 
       {/* footer */}
       <div className="neon-footer mt-6 px-4 py-3 rounded-xl flex flex-wrap items-center justify-between gap-2 font-mono-neon text-[10px] tracking-widest neon-text-faint">
-        <span>WASD · MOUSE · SPACE · 1-9 · Q/E · T · I · ESC</span>
-        <span>NEON SURVIVOR v2.1</span>
+        <span className="hidden sm:inline">WASD · MOUSE · SPACE · 1-9 · Q/E · T · I · ESC</span>
+        <span>NEON SURVIVOR</span>
+        <span className="hidden sm:inline">v2.1</span>
       </div>
     </motion.div>
   );

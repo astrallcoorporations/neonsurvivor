@@ -22,12 +22,17 @@ export default function Home() {
   const back = useCallback(() => setScreen('menu'), []);
 
   return (
-    <main className="relative min-h-screen w-full overflow-x-hidden flex flex-col">
+    <main className="relative min-h-screen w-full overflow-x-hidden flex flex-col" role="main" aria-label="Neon Survivor">
       {/* animated background — hidden during active play to save GPU for the game */}
       {screen !== 'play' && <CyberBackground />}
 
       {/* scanlines + vignette overlay */}
       {screen !== 'play' && <div className="neon-scanlines" />}
+
+      {/* screen change announcements for screen readers */}
+      <div aria-live="polite" aria-atomic="true" className="sr-only">
+        {screen !== 'landing' && `${screen} screen`}
+      </div>
 
       {/* content */}
       <div className="relative z-10 flex-1 flex flex-col">
@@ -51,11 +56,10 @@ export default function Home() {
           {screen === 'news' && <NewsScreen key="news" onBack={back} />}
           {screen === 'howto' && <HowToScreen key="howto" onBack={back} />}
           {screen === 'settings' && <SettingsScreen key="settings" onBack={back} />}
+          {screen === 'play' && (
+            <PlayScreen key="play" mode={mode} onExit={() => setScreen('menu')} />
+          )}
         </AnimatePresence>
-
-        {screen === 'play' && (
-          <PlayScreen mode={mode} onExit={() => setScreen('menu')} />
-        )}
       </div>
     </main>
   );

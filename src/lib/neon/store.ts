@@ -26,6 +26,30 @@ export interface DailyQuest {
 }
 export interface MasteryEntry { level: number; xp: number; }
 
+export interface GameSettings {
+  masterVolume: number;
+  musicVolume: number;
+  sfxVolume: number;
+  bloom: boolean;
+  scanlines: boolean;
+  screenShake: boolean;
+  damageNumbers: boolean;
+  reducedMotion: boolean;
+  particleQuality: 'low' | 'medium' | 'high';
+}
+
+export const DEFAULT_SETTINGS: GameSettings = {
+  masterVolume: 0.65,
+  musicVolume: 0.32,
+  sfxVolume: 0.7,
+  bloom: true,
+  scanlines: true,
+  screenShake: true,
+  damageNumbers: true,
+  reducedMotion: false,
+  particleQuality: 'high',
+};
+
 export interface MetaData {
   credits: number;
   prestige: number;
@@ -42,6 +66,7 @@ export interface MetaData {
   dailyProgress: Record<string, number>;
   dailyDate: string;
   stats: MetaStats;
+  settings: GameSettings;
 }
 
 function defaultMeta(): MetaData {
@@ -52,6 +77,7 @@ function defaultMeta(): MetaData {
     relicSlots: 1, relicsOwned: [], itemsDiscovered: [],
     dailyQuests: [], dailyProgress: {}, dailyDate: '',
     stats: { totalKills:0, totalRuns:0, totalBosses:0, bestTime:0, bestWave:0, bestLevel:0, bestScore:0, totalCredits:0, totalPlaytime:0 },
+    settings: { ...DEFAULT_SETTINGS },
   };
 }
 
@@ -61,7 +87,11 @@ function loadMeta(): MetaData {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return defaultMeta();
     const parsed = JSON.parse(raw);
-    return { ...defaultMeta(), ...parsed, stats: { ...defaultMeta().stats, ...(parsed.stats||{}) } };
+    return {
+      ...defaultMeta(), ...parsed,
+      stats: { ...defaultMeta().stats, ...(parsed.stats||{}) },
+      settings: { ...DEFAULT_SETTINGS, ...(parsed.settings||{}) },
+    };
   } catch { return defaultMeta(); }
 }
 
@@ -82,6 +112,7 @@ interface NeonState {
   claimDaily: () => number;
   doPrestige: () => boolean;
   doAscend: () => boolean;
+  updateSettings: (patch: Partial<GameSettings>) => void;
   clearData: () => void;
   _set: (updater: (m: MetaData) => MetaData) => void;
 }
@@ -184,6 +215,13 @@ export const useNeon = create<NeonState>((set, get) => ({
     if (m.stats.bestLevel < 40 || m.ascension >= 5) return false;
     get()._set(prev => ({ ...prev, ascension: prev.ascension + 1, credits: prev.credits + 500 }));
     return true;
+  },
+
+  updateSettings: (patch) => {
+    get()._set(prev => ({
+      ...prev,
+      settings: { ...prev.settings, ...patch },
+    }));
   },
 
   clearData: () => {

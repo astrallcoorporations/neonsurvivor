@@ -12,13 +12,31 @@ interface Props {
 
 export default function PlayScreen({ mode, onExit }: Props) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const { ready, hud, startGame, pause, resume, quit, focusGame } = useNeonBridge(iframeRef);
+  const { ready, hud, startGame, pause, resume, quit, focusGame, sendSettings } = useNeonBridge(iframeRef);
   const [started, setStarted] = useState(false);
   const [showPause, setShowPause] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const reload = useNeon(s => s.reload);
   const meta = useNeon(s => s.meta);
   const reloadedRef = useRef(false);
+
+  // Send settings to iframe on game start and when they change
+  useEffect(() => {
+    if (started && sendSettings) {
+      sendSettings(meta.settings);
+    }
+  }, [started, meta.settings, sendSettings]);
+
+  useEffect(() => {
+    const onChange = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail && sendSettings) {
+        sendSettings({ ...meta.settings, ...detail });
+      }
+    };
+    window.addEventListener('neon-settings-change', onChange);
+    return () => window.removeEventListener('neon-settings-change', onChange);
+  }, [meta.settings, sendSettings]);
 
   // Start the game once the iframe reports ready
   useEffect(() => {
@@ -43,7 +61,7 @@ export default function PlayScreen({ mode, onExit }: Props) {
   useEffect(() => {
     const iframe = iframeRef.current;
     if (!iframe) return;
-    const w = iframe.contentWindow;
+    const w = iframe.contentWindow as Window & { KeyboardEvent: typeof KeyboardEvent; MouseEvent: typeof MouseEvent } | null;
     if (!w) return;
 
     const fwdKey = (type: 'keydown' | 'keyup') => (e: KeyboardEvent) => {
@@ -54,7 +72,7 @@ export default function PlayScreen({ mode, onExit }: Props) {
         'arrowup','arrowdown','arrowleft','arrowright'];
       if (k.length === 1 && !gameKeys.includes(lower) && !/[a-z0-9]/i.test(k)) return;
       try {
-        const ev = new w.KeyboardEvent(type, {
+        const ev = new KeyboardEvent(type, {
           key: e.key, code: e.code, keyCode: e.keyCode, which: e.which, charCode: e.charCode,
           repeat: e.repeat, ctrlKey: e.ctrlKey, altKey: e.altKey, shiftKey: e.shiftKey, metaKey: e.metaKey,
           bubbles: true, cancelable: true,
@@ -64,7 +82,7 @@ export default function PlayScreen({ mode, onExit }: Props) {
     };
     const fwdMouse = (type: string) => (e: MouseEvent) => {
       try {
-        const ev = new w.MouseEvent(type, {
+        const ev = new MouseEvent(type, {
           clientX: e.clientX, clientY: e.clientY, screenX: e.screenX, screenY: e.screenY,
           button: e.button, buttons: e.buttons,
           ctrlKey: e.ctrlKey, altKey: e.altKey, shiftKey: e.shiftKey, metaKey: e.metaKey,
@@ -73,13 +91,48 @@ export default function PlayScreen({ mode, onExit }: Props) {
         w.dispatchEvent(ev);
       } catch {}
     };
+    const fwdTouch = (type: string) => (e: TouchEvent) => {
+      try {
+        const touches = e.changedTouches;
+        if (touches.length > 0) {
+          const touch = touches[0];
+          const ev = new MouseEvent(type === 'touchstart' ? 'mousedown' : type === 'touchend' ? 'mouseup' : 'mousemove', {
+            clientX: touch.clientX, clientY: touch.clientY,
+            screenX: touch.screenX, screenY: touch.screenY,
+            button: 0, buttons: type === 'touchend' ? 0 : 1,
+            bubbles: true, cancelable: true,
+          });
+          w.dispatchEvent(ev);
+        }
+      } catch {}
+    };
+    const fwdTouchMove = (e: TouchEvent) => {
+      try {
+        const touches = e.changedTouches;
+        if (touches.length > 0) {
+          const touch = touches[0];
+          const ev = new MouseEvent('mousemove', {
+            clientX: touch.clientX, clientY: touch.clientY,
+            screenX: touch.screenX, screenY: touch.screenY,
+            button: 0, buttons: 1,
+            bubbles: true, cancelable: true,
+          });
+          w.dispatchEvent(ev);
+        }
+      } catch {}
+    };
+
     const kd = fwdKey('keydown'), ku = fwdKey('keyup');
     const mm = fwdMouse('mousemove'), md = fwdMouse('mousedown'), mu = fwdMouse('mouseup');
+    const ts = fwdTouch('touchstart'), te = fwdTouch('touchend'), tm = fwdTouchMove;
     window.addEventListener('keydown', kd);
     window.addEventListener('keyup', ku);
     window.addEventListener('mousemove', mm);
     window.addEventListener('mousedown', md);
     window.addEventListener('mouseup', mu);
+    window.addEventListener('touchstart', ts, { passive: false });
+    window.addEventListener('touchend', te, { passive: false });
+    window.addEventListener('touchmove', tm, { passive: false });
     const onClick = () => { try { w.focus(); } catch {} };
     document.addEventListener('click', onClick);
     return () => {
@@ -88,6 +141,9 @@ export default function PlayScreen({ mode, onExit }: Props) {
       window.removeEventListener('mousemove', mm);
       window.removeEventListener('mousedown', md);
       window.removeEventListener('mouseup', mu);
+      window.removeEventListener('touchstart', ts);
+      window.removeEventListener('touchend', te);
+      window.removeEventListener('touchmove', tm);
       document.removeEventListener('click', onClick);
     };
   }, []);
@@ -119,12 +175,13 @@ export default function PlayScreen({ mode, onExit }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-30 bg-black">
+    <div className="fixed inset-0 z-30 bg-black" style={{ overscrollBehavior: 'none' }}>
       <iframe
         ref={iframeRef}
         src="/neon-survivor.html"
         title="Neon Survivor"
         className="absolute inset-0 w-full h-full border-0"
+        style={{ touchAction: 'none' }}
         allow="autoplay; fullscreen; gamepad"
         onLoad={() => focusGame()}
       />
@@ -158,6 +215,9 @@ export default function PlayScreen({ mode, onExit }: Props) {
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="absolute inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Game paused"
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
@@ -181,6 +241,9 @@ export default function PlayScreen({ mode, onExit }: Props) {
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="absolute inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Game over"
           >
             <motion.div
               initial={{ scale: 0.92, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -230,12 +293,35 @@ function GoStat({ label, value, color }: { label: string; value: string; color: 
 }
 
 /** Brief control hint that fades out after a few seconds. Non-interactive. */
+function useIsTouch() {
+  if (typeof window === 'undefined') return false;
+  return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+}
+
 function RunHint() {
   const [show, setShow] = useState(true);
+  const isTouch = useIsTouch();
+  const [controlType, setControlType] = useState<'keyboard' | 'gamepad' | 'touch'>(() =>
+    isTouch ? 'touch' : 'keyboard'
+  );
   useEffect(() => {
     const t = setTimeout(() => setShow(false), 4200);
     return () => clearTimeout(t);
   }, []);
+  useEffect(() => {
+    if (isTouch) return;
+    const checkGamepad = () => {
+      const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+      for (const gp of gamepads) {
+        if (gp && (gp.buttons.some(b => b.pressed) || gp.axes.some(a => Math.abs(a) > 0.2))) {
+          setControlType('gamepad');
+          return;
+        }
+      }
+    };
+    const iv = setInterval(checkGamepad, 1000);
+    return () => clearInterval(iv);
+  }, [isTouch]);
   return (
     <AnimatePresence>
       {show && (
@@ -244,12 +330,27 @@ function RunHint() {
           exit={{ opacity: 0, y: 20 }} transition={{ duration: 0.5 }}
           className="absolute bottom-24 left-1/2 -translate-x-1/2 z-40 pointer-events-none"
         >
-          <div className="neon-panel px-4 py-2 font-mono-neon text-[11px] tracking-widest neon-text-dim whitespace-nowrap">
-            <span style={{ color: 'var(--neon-cyan)' }}>WASD</span> MOVE ·
-            <span style={{ color: 'var(--neon-mag)' }}> SPACE</span> DASH ·
-            <span style={{ color: 'var(--neon-yel)' }}> 1-9</span> ABILITIES ·
-            <span style={{ color: 'var(--neon-red)' }}> ESC</span> PAUSE
-          </div>
+          {controlType === 'gamepad' ? (
+            <div className="neon-panel px-4 py-2 font-mono-neon text-[11px] tracking-widest neon-text-dim whitespace-nowrap">
+              <span style={{ color: 'var(--neon-cyan)' }}>L-STICK</span> MOVE ·
+              <span style={{ color: 'var(--neon-mag)' }}> A</span> DASH ·
+              <span style={{ color: 'var(--neon-yel)' }}> ABILITIES</span> ·
+              <span style={{ color: 'var(--neon-red)' }}> START</span> PAUSE
+            </div>
+          ) : controlType === 'touch' ? (
+            <div className="neon-panel px-4 py-2 font-mono-neon text-[11px] tracking-widest neon-text-dim text-center whitespace-normal max-w-[90vw]">
+              <span style={{ color: 'var(--neon-cyan)' }}>TAP</span> TO AIM ·
+              <span style={{ color: 'var(--neon-mag)' }}> SWIPE</span> TO MOVE ·
+              <span style={{ color: 'var(--neon-yel)' }}> TAP ABILITIES</span>
+            </div>
+          ) : (
+            <div className="neon-panel px-4 py-2 font-mono-neon text-[11px] tracking-widest neon-text-dim whitespace-nowrap">
+              <span style={{ color: 'var(--neon-cyan)' }}>WASD</span> MOVE ·
+              <span style={{ color: 'var(--neon-mag)' }}> SPACE</span> DASH ·
+              <span style={{ color: 'var(--neon-yel)' }}> 1-9</span> ABILITIES ·
+              <span style={{ color: 'var(--neon-red)' }}> ESC</span> PAUSE
+            </div>
+          )}
         </motion.div>
       )}
     </AnimatePresence>

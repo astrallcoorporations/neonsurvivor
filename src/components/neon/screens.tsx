@@ -15,6 +15,8 @@ export function ScreenShell({ icon, title, sub, onBack, children }: { icon: stri
       initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }}
       transition={{ duration: 0.35 }}
       className="relative z-10 w-full max-w-6xl mx-auto px-4 py-6"
+      role="region"
+      aria-label={title}
     >
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
@@ -473,20 +475,63 @@ export function HowToScreen({ onBack }: { onBack: () => void }) {
 export function SettingsScreen({ onBack }: { onBack: () => void }) {
   const clearData = useNeon(s => s.clearData);
   const meta = useNeon(s => s.meta);
+  const updateSettings = useNeon(s => s.updateSettings);
+  const settings = meta.settings;
+
+  const set = <K extends keyof typeof settings>(key: K, val: typeof settings[K]) => {
+    updateSettings({ [key]: val } as Partial<typeof settings>);
+    window.dispatchEvent(new CustomEvent('neon-settings-change', { detail: { [key]: val } }));
+  };
+
   return (
     <ScreenShell icon="⚙️" title="SETTINGS" sub="CONFIGURATION & DATA" onBack={onBack}>
-      <div className="grid sm:grid-cols-2 gap-3 mb-3">
-        <div className="neon-card p-5">
-          <div className="font-display text-lg mb-2" style={{ color: 'var(--neon-cyan)' }}>AUDIO</div>
-          <p className="text-xs neon-text-dim mb-3 leading-relaxed">In-game audio (synthwave music + SFX) is managed by the game. Click in-game to resume the audio context if muted by the browser.</p>
-          <span className="neon-chip">GENERATIVE SOUNDTRACK</span>
-        </div>
-        <div className="neon-card p-5">
-          <div className="font-display text-lg mb-2" style={{ color: 'var(--neon-grn)' }}>PERFORMANCE</div>
-          <p className="text-xs neon-text-dim mb-3 leading-relaxed">WebGL2 with bloom post-processing. The game auto-throttles particles and enemies to maintain FPS.</p>
-          <span className="neon-chip">24000 INSTANCES · 300 ENEMY CAP</span>
+      {/* Audio */}
+      <div className="neon-card p-5 mb-3">
+        <div className="font-display text-lg mb-4" style={{ color: 'var(--neon-cyan)' }}>AUDIO</div>
+        <div className="space-y-4">
+          <SliderRow label="MASTER VOLUME" value={settings.masterVolume} onChange={v => set('masterVolume', v)} color="var(--neon-cyan)" />
+          <SliderRow label="MUSIC" value={settings.musicVolume} onChange={v => set('musicVolume', v)} color="var(--neon-pur)" />
+          <SliderRow label="SFX" value={settings.sfxVolume} onChange={v => set('sfxVolume', v)} color="var(--neon-grn)" />
         </div>
       </div>
+
+      {/* Visual */}
+      <div className="neon-card p-5 mb-3">
+        <div className="font-display text-lg mb-4" style={{ color: 'var(--neon-mag)' }}>VISUAL</div>
+        <div className="space-y-3">
+          <ToggleRow label="BLOOM" value={settings.bloom} onChange={v => set('bloom', v)} color="var(--neon-mag)" />
+          <ToggleRow label="CRT SCANLINES" value={settings.scanlines} onChange={v => set('scanlines', v)} color="var(--neon-pur)" />
+          <ToggleRow label="SCREEN SHAKE" value={settings.screenShake} onChange={v => set('screenShake', v)} color="var(--neon-cyan)" />
+          <ToggleRow label="DAMAGE NUMBERS" value={settings.damageNumbers} onChange={v => set('damageNumbers', v)} color="var(--neon-yel)" />
+          <div className="flex items-center justify-between py-2">
+            <span className="font-mono-neon text-[11px] tracking-widest neon-text-dim">PARTICLE QUALITY</span>
+            <div className="flex gap-1.5">
+              {(['low', 'medium', 'high'] as const).map(q => (
+                <button key={q} onClick={() => set('particleQuality', q)}
+                  className={`neon-chip cursor-pointer transition-all ${settings.particleQuality === q ? 'ring-1' : 'opacity-50'}`}
+                  style={settings.particleQuality === q ? { color: 'var(--neon-cyan)', borderColor: 'var(--neon-cyan)', boxShadow: '0 0 10px rgba(34,230,255,.3)' } : {}}>
+                  {q.toUpperCase()}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Accessibility */}
+      <div className="neon-card p-5 mb-3">
+        <div className="font-display text-lg mb-4" style={{ color: 'var(--neon-yel)' }}>ACCESSIBILITY</div>
+        <div className="space-y-3">
+          <ToggleRow label="REDUCED MOTION" value={settings.reducedMotion} onChange={v => set('reducedMotion', v)} color="var(--neon-yel)" />
+          <div className="neon-panel p-3 mt-2">
+            <p className="text-xs neon-text-dim leading-relaxed">
+              <span style={{ color: 'var(--neon-cyan)' }}>Tip:</span> Your browser&apos;s <code className="font-mono-neon" style={{ color: 'var(--neon-mag)' }}>prefers-reduced-motion</code> setting is also respected for UI animations.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Data */}
       <div className="neon-card p-5">
         <div className="font-display text-lg mb-2" style={{ color: 'var(--neon-red)' }}>⚠ DANGER ZONE</div>
         <p className="text-xs neon-text-dim mb-3 leading-relaxed">Erase ALL saved progress (credits, unlocks, classes, prestige, stats). This cannot be undone.</p>
@@ -506,5 +551,41 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
         </div>
       </div>
     </ScreenShell>
+  );
+}
+
+function SliderRow({ label, value, onChange, color }: { label: string; value: number; onChange: (v: number) => void; color: string }) {
+  return (
+    <div className="flex items-center gap-4">
+      <span className="font-mono-neon text-[11px] tracking-widest neon-text-dim w-36 flex-shrink-0">{label}</span>
+      <input
+        type="range" min={0} max={100} step={1}
+        value={Math.round(value * 100)}
+        onChange={e => onChange(Number(e.target.value) / 100)}
+        className="neon-slider flex-1"
+        aria-label={label}
+      />
+      <span className="font-mono-neon text-[11px] w-10 text-right" style={{ color }}>{Math.round(value * 100)}%</span>
+    </div>
+  );
+}
+
+function ToggleRow({ label, value, onChange, color }: { label: string; value: boolean; onChange: (v: boolean) => void; color: string }) {
+  return (
+    <div className="flex items-center justify-between py-2">
+      <span className="font-mono-neon text-[11px] tracking-widest neon-text-dim">{label}</span>
+      <button
+        onClick={() => onChange(!value)}
+        className="neon-chip cursor-pointer transition-all"
+        style={value
+          ? { color, borderColor: color, boxShadow: `0 0 10px ${color}44` }
+          : { opacity: 0.45 }}
+        role="switch"
+        aria-checked={value}
+        aria-label={label}
+      >
+        {value ? 'ON' : 'OFF'}
+      </button>
+    </div>
   );
 }

@@ -30,7 +30,7 @@ export function LandingScreen({ onEnter }: { onEnter: () => void }) {
 
   // allow Enter to skip / proceed once ready; also any key
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (ready) onEnter(); };
+    const onKey = (e: KeyboardEvent) => { if (ready && (e.key === 'Enter' || e.key === ' ')) onEnter(); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [ready, onEnter]);
@@ -106,7 +106,7 @@ export function LandingScreen({ onEnter }: { onEnter: () => void }) {
               ▶ ENTER THE GRID
             </motion.button>
             <div className="font-mono-neon text-[10px] tracking-[0.3em] neon-text-faint neon-pulse">
-              CLICK OR PRESS ANY KEY
+              CLICK OR PRESS ENTER
             </div>
           </motion.div>
         )}
