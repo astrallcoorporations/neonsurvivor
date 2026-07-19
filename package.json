@@ -6,7 +6,8 @@
     "dev": "node server.js",
     "dev:static": "next dev -p 3000",
     "build": "next build",
-    "start": "NODE_ENV=production node server.js",
+    "start": "next start",
+    "start:mp": "node server.js",
     "lint": "next lint"
   },
   "dependencies": {

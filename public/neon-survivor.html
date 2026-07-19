@@ -2826,9 +2826,9 @@ function drawR(shx,shz){
   for(let i=0;i<enemies.length;i++){const e=enemies[i];let s=e.radius*1.9;
     let em=e.flash>0?2.8:(e.boss?1.0+Math.sin(G.t*0.01)*0.3:0.5);if(e.boss)s*=1+Math.sin(G.t*0.005)*0.04;if(e.elite&&!e.boss)em+=0.4;
     R.push(e.mesh,e.x,e.y,e.z,s,s,s,e.cr,e.cg,e.cb,em,e.spin);}
-  for(let i=0;i<drones.length;i++){const dr=drones[i];const c=dr.def.col;R.push(R.meshes.enemy_drone||dr.def.mesh||'cube',dr.x,dr.y||40,dr.z,26,26,26,c[0],c[1],c[2],1,dr.ang||0);}
+  for(let i=0;i<drones.length;i++){const dr=drones[i];const c=dr.def.col;R.push(R.meshes.enemy_Enemy_Drone||R.meshes.enemy_drone||dr.def.mesh||'cube',dr.x,dr.y||40,dr.z,26,26,26,c[0],c[1],c[2],1,dr.ang||0);}
   for(let i=0;i<loots.length;i++){const l=loots[i];const c=hex3(RAR[l.rar].c);
-    R.push(R.meshes.pickup_xp||'diamond',l.x,l.y||20,l.z,30,30,30,c[0],c[1],c[2],1.4,l.t||0);}
+    R.push(R.meshes.pickup_Pickup_XP||R.meshes.pickup_xp||'diamond',l.x,l.y||20,l.z,30,30,30,c[0],c[1],c[2],1.4,l.t||0);}
   R.render();
 }
 
@@ -3413,13 +3413,13 @@ async function loadModels(){
 
   // Per-type enemy mesh swap — each enemy type gets its own GLB model
   const enemyMeshMap={
-    grunt:'enemy_enemy_grunt',
-    fast:'enemy_enemy_fast',
-    tank:'enemy_enemy_tank',
-    exploder:'enemy_enemy_exploder',
-    shooter:'enemy_enemy_shooter',
-    sniper:'enemy_enemy_sniper',
-    drone:'enemy_enemy_drone',
+    grunt:'enemy_Enemy_Grunt',
+    fast:'enemy_Enemy_Fast',
+    tank:'enemy_Enemy_Tank',
+    exploder:'enemy_Enemy_Exploder',
+    shooter:'enemy_Enemy_Shooter',
+    sniper:'enemy_Enemy_Sniper',
+    drone:'enemy_Enemy_Drone',
   };
   let swappedCount=0;
   Object.keys(enemyMeshMap).forEach(k=>{
@@ -3440,48 +3440,48 @@ async function loadModels(){
   }
 
   console.log('[GLB] All meshes:',Object.keys(R.meshes));
-
-  // Map-specific environment GLB loading
-  window._mapEnvMeshes={};
-  window._envProps=[];
-  const mapGLBMap={
-    neon_grid:'/assets/neon_survivor/map_neongrid.glb',
-    crimson_wastes:'/assets/neon_survivor/map_crimsonwastes.glb',
-    void_depths:'/assets/neon_survivor/map_voiddepths.glb',
-    toxic_sewers:'/assets/neon_survivor/map_toxicsewers.glb',
-    frozen_core:'/assets/neon_survivor/map_frozencore.glb',
-    solar_flare:'/assets/neon_survivor/map_solarflare.glb',
-  };
-  async function loadMapEnv(mapId){
-    const url=mapGLBMap[mapId];if(!url)return;
-    if(window._mapEnvMeshes[mapId])return;
-    await loadGLB(url,'map_'+mapId);
-    window._mapEnvMeshes[mapId]=true;
-    console.log('[GLB] Loaded map env for '+mapId);
-    scatterEnvProps(mapId);
-  }
-  function scatterEnvProps(mapId){
-    window._envProps=[];
-    const pfx='map_'+mapId+'_';
-    const keys=Object.keys(R.meshes).filter(k=>k.startsWith(pfx));
-    if(!keys.length)return;
-    const count=35+Math.floor(Math.random()*20);
-    const arenaR=2800;
-    for(let i=0;i<count;i++){
-      const k=keys[Math.floor(Math.random()*keys.length)];
-      const angle=Math.random()*Math.PI*2;
-      const dist=600+Math.random()*arenaR;
-      const x=Math.cos(angle)*dist;
-      const z=Math.sin(angle)*dist;
-      const scale=0.6+Math.random()*1.2;
-      const rot=Math.random()*Math.PI*2;
-      const hue=0.3+Math.random()*0.4;
-      window._envProps.push({mesh:k,x:0,y:20+Math.random()*30,z,sx:scale*40,sy:scale*40,sz:scale*40,r:hue*0.4,g:hue*0.8,b:1,em:0.6+Math.random()*0.5,rot});
-    }
-    console.log('[ENV] Spawned '+window._envProps.length+' props for '+mapId);
-  }
 }
 loadModels();
+
+/* Map-specific environment GLB loading — global scope */
+window._mapEnvMeshes={};
+window._envProps=[];
+const mapGLBMap={
+  neon_grid:'/assets/neon_survivor/map_neongrid.glb',
+  crimson_wastes:'/assets/neon_survivor/map_crimsonwastes.glb',
+  void_depths:'/assets/neon_survivor/map_voiddepths.glb',
+  toxic_sewers:'/assets/neon_survivor/map_toxicsewers.glb',
+  frozen_core:'/assets/neon_survivor/map_frozencore.glb',
+  solar_flare:'/assets/neon_survivor/map_solarflare.glb',
+};
+window.loadMapEnv=async function(mapId){
+  const url=mapGLBMap[mapId];if(!url)return;
+  if(window._mapEnvMeshes[mapId])return;
+  await loadGLB(url,'map_'+mapId);
+  window._mapEnvMeshes[mapId]=true;
+  console.log('[GLB] Loaded map env for '+mapId);
+  scatterEnvProps(mapId);
+};
+function scatterEnvProps(mapId){
+  window._envProps=[];
+  const pfx='map_'+mapId+'_';
+  const keys=Object.keys(R.meshes).filter(k=>k.startsWith(pfx));
+  if(!keys.length)return;
+  const count=35+Math.floor(Math.random()*20);
+  const arenaR=2800;
+  for(let i=0;i<count;i++){
+    const k=keys[Math.floor(Math.random()*keys.length)];
+    const angle=Math.random()*Math.PI*2;
+    const dist=600+Math.random()*arenaR;
+    const x=Math.cos(angle)*dist;
+    const z=Math.sin(angle)*dist;
+    const scale=0.6+Math.random()*1.2;
+    const rot=Math.random()*Math.PI*2;
+    const hue=0.3+Math.random()*0.4;
+    window._envProps.push({mesh:k,x:0,y:20+Math.random()*30,z,sx:scale*40,sy:scale*40,sz:scale*40,r:hue*0.4,g:hue*0.8,b:1,em:0.6+Math.random()*0.5,rot});
+  }
+  console.log('[ENV] Spawned '+window._envProps.length+' props for '+mapId);
+}
 
 startEngine();
 </script>
