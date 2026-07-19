@@ -615,6 +615,22 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
         </div>
       </div>
 
+      {/* Automation */}
+      <div className="neon-card p-5 mb-3">
+        <div className="font-display text-lg mb-2" style={{ color: 'var(--neon-grn)' }}>🤖 AUTOMATION</div>
+        <p className="text-xs neon-text-dim mb-4 leading-relaxed">Simplify gameplay so you can focus on movement and dodge. Great for relaxing or accessibility.</p>
+        <div className="space-y-3">
+          <ToggleRow label="AUTO-ABILITIES" value={settings.autoAbilities} onChange={v => set('autoAbilities', v)} color="var(--neon-grn)" />
+          <div className="neon-panel p-2.5 mb-1">
+            <p className="text-[10px] neon-text-dim leading-relaxed">Abilities fire automatically when off cooldown. No need to press 1-9.</p>
+          </div>
+          <ToggleRow label="AUTO-UPGRADE" value={settings.autoUpgrade} onChange={v => set('autoUpgrade', v)} color="var(--neon-grn)" />
+          <div className="neon-panel p-2.5">
+            <p className="text-[10px] neon-text-dim leading-relaxed">Level-up upgrades are picked automatically. Focus on surviving, not choosing.</p>
+          </div>
+        </div>
+      </div>
+
       {/* Accessibility */}
       <div className="neon-card p-5 mb-3">
         <div className="font-display text-lg mb-4" style={{ color: 'var(--neon-yel)' }}>ACCESSIBILITY</div>

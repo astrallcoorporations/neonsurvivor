@@ -405,21 +405,24 @@ const Bridge={
     if(s.particleQuality&&window.G){
       const m={low:0.3,medium:0.6,high:1};G.particleMul=m[s.particleQuality]||1;
     }
+    // automation: auto-abilities, auto-upgrade
+    if(s.autoAbilities!=null&&window.G){G.autoAbilities=!!s.autoAbilities;}
+    if(s.autoUpgrade!=null&&window.G){G.autoUpgrade=!!s.autoUpgrade;}
   },
   applyMap(mapId){
     if(!mapId||!window.G)return;
     G.mapId=mapId;
     const themes={
-      neon_grid:       {ground:'#1a0530',grid:'rgba(34,230,255,0.2)',fog:'rgba(122,17,72,0.5)',gridLine:'22e6ff',fogColor:[0.48,0.07,0.28]},
-      crimson_wastes:  {ground:'#1a0800',grid:'rgba(255,59,92,0.2)',fog:'rgba(255,59,92,0.4)',gridLine:'ff3b5c',fogColor:[1,0.23,0.36]},
-      void_depths:     {ground:'#06021a',grid:'rgba(155,92,255,0.15)',fog:'rgba(155,92,255,0.3)',gridLine:'9b5cff',fogColor:[0.61,0.36,1]},
-      toxic_sewers:    {ground:'#040d08',grid:'rgba(67,255,158,0.2)',fog:'rgba(67,255,158,0.35)',gridLine:'43ff9e',fogColor:[0.26,1,0.62]},
-      frozen_core:     {ground:'#060d18',grid:'rgba(120,200,255,0.2)',fog:'rgba(120,200,255,0.3)',gridLine:'78c8ff',fogColor:[0.47,0.78,1]},
-      solar_flare:     {ground:'#1a1000',grid:'rgba(255,226,74,0.25)',fog:'rgba(255,226,74,0.3)',gridLine:'ffe24a',fogColor:[1,0.89,0.29]},
+      neon_grid:       {base:'#0a0618',ground:'#1a0530',grid:'rgba(34,230,255,0.2)',fog:'rgba(122,17,72,0.5)',gridLine:'22e6ff',fogColor:[0.48,0.07,0.28],gridAlpha:1.0},
+      crimson_wastes:  {base:'#120300',ground:'#1a0800',grid:'rgba(255,59,92,0.2)',fog:'rgba(255,59,92,0.4)',gridLine:'ff3b5c',fogColor:[1.0,0.23,0.36],gridAlpha:1.0},
+      void_depths:     {base:'#04011a',ground:'#06021a',grid:'rgba(155,92,255,0.15)',fog:'rgba(155,92,255,0.3)',gridLine:'9b5cff',fogColor:[0.61,0.36,1.0],gridAlpha:0.8},
+      toxic_sewers:    {base:'#020d04',ground:'#040d08',grid:'rgba(67,255,158,0.2)',fog:'rgba(67,255,158,0.35)',gridLine:'43ff9e',fogColor:[0.26,1.0,0.62],gridAlpha:1.0},
+      frozen_core:     {base:'#030a14',ground:'#060d18',grid:'rgba(120,200,255,0.2)',fog:'rgba(120,200,255,0.3)',gridLine:'78c8ff',fogColor:[0.47,0.78,1.0],gridAlpha:1.0},
+      solar_flare:     {base:'#0e0a00',ground:'#1a1000',grid:'rgba(255,226,74,0.25)',fog:'rgba(255,226,74,0.3)',gridLine:'ffe24a',fogColor:[1.0,0.89,0.29],gridAlpha:1.0},
     };
     const t=themes[mapId]||themes.neon_grid;
     G.mapTheme=t;
-    // Apply ground color to renderer background
+    // Apply sky background via clearColor
     if(window.R&&R.gl){
       const gc=t.ground;
       const r=parseInt(gc.slice(1,3),16)/255;

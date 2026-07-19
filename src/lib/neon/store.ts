@@ -37,6 +37,8 @@ export interface GameSettings {
   reducedMotion: boolean;
   particleQuality: 'low' | 'medium' | 'high';
   selectedMap: string;
+  autoAbilities: boolean;
+  autoUpgrade: boolean;
 }
 
 export const DEFAULT_SETTINGS: GameSettings = {
@@ -50,6 +52,8 @@ export const DEFAULT_SETTINGS: GameSettings = {
   reducedMotion: false,
   particleQuality: 'high',
   selectedMap: 'neon_grid',
+  autoAbilities: false,
+  autoUpgrade: false,
 };
 
 export interface MetaData {

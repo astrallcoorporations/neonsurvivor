@@ -457,8 +457,8 @@ body.embedded #gameover{display:none !important}
     </div>
     <div class="help">
       <b>WASD</b> move · <b>Mouse</b> aim · auto-fire ON · <kbd class="kbd">L-Click</kbd> overdrive ·
-      <kbd class="kbd">Space</kbd> dash · <kbd class="kbd">1-9</kbd> abilities · <kbd class="kbd">Q</kbd>/<kbd class="kbd">E</kbd> swap weapon ·
-      <kbd class="kbd">T</kbd> skill tree · <kbd class="kbd">Esc</kbd> pause
+      <kbd class="kbd">Space</kbd> dash · <kbd class="kbd">1-9</kbd> abilities · <kbd class="kbd">Esc</kbd> pause
+      <br><span style="opacity:.6;font-size:10px">TIP: Enable <b>Auto-Abilities</b> and <b>Auto-Upgrade</b> in Settings for simpler play</span>
     </div>
     <div class="row" style="margin-top:14px"><button class="btn" style="width:auto;padding:10px 26px" id="howBtn">HOW TO PLAY</button></div>
   </div>
@@ -902,6 +902,15 @@ const R={
     gl.uniform1f(this.progGround.u.uHalf,HALF);
     const gc=G.mapTheme&&G.mapTheme.gridLine?hexToRgb(G.mapTheme.gridLine):[0.10,0.85,1.0];
     gl.uniform3f(this.progGround.u.uGridCol,gc[0],gc[1],gc[2]);
+    // per-map base color
+    const bc=G.mapTheme&&G.mapTheme.base?hexToRgb(G.mapTheme.base):[0.015,0.02,0.05];
+    gl.uniform3f(this.progGround.u.uBaseCol,bc[0],bc[1],bc[2]);
+    // per-map fog/boundary color
+    const fc=G.mapTheme&&G.mapTheme.fogColor?G.mapTheme.fogColor:[1.0,0.1,0.3];
+    gl.uniform3f(this.progGround.u.uFogCol,fc[0],fc[1],fc[2]);
+    // grid opacity (from alpha of grid CSS color)
+    const ga=G.mapTheme&&G.mapTheme.gridAlpha!=null?G.mapTheme.gridAlpha:1.0;
+    gl.uniform1f(this.progGround.u.uGridAlpha,ga);
     this.drawGround();
     }
     // instanced meshes
@@ -1029,7 +1038,9 @@ void main(){ vec3 c=texture(uScene,vUv).rgb; vec3 b=texture(uBloom,vUv).rgb;
    placeholder ground program with a proper world-space grid below. */
 const FS_GROUND2=`#version 300 es
 precision highp float;
-in vec3 vWorld; uniform vec3 uCam; uniform float uTime; uniform float uHalf; uniform vec3 uGridCol; out vec4 frag;
+in vec3 vWorld; uniform vec3 uCam; uniform float uTime; uniform float uHalf;
+uniform vec3 uGridCol; uniform vec3 uBaseCol; uniform vec3 uFogCol; uniform float uGridAlpha;
+out vec4 frag;
 float gridline(vec2 p,float cellSz,float w){
   vec2 g=abs(fract(p/cellSz-0.5)-0.5)/fract(w);
   float l=min(g.x,g.y); return 1.0-min(l,1.0);
@@ -1038,17 +1049,14 @@ void main(){
   vec2 p=vWorld.xz;
   float dcam=distance(p,uCam.xz);
   float fog=clamp(1.0-dcam/4200.0,0.0,1.0);
-  vec3 base=vec3(0.015,0.02,0.05);
   float g1=gridline(p,140.0,1.6/max(dcam*0.0009,0.5));
   float g2=gridline(p,700.0,2.4/max(dcam*0.0009,0.5));
-  vec3 col=base + uGridCol*g1*0.5 + uGridCol*g2*0.9;
-  // pulse rings around origin districts
+  vec3 col=uBaseCol + uGridCol*g1*0.5*uGridAlpha + uGridCol*g2*0.9*uGridAlpha;
   float r=length(p);
-  col += uGridCol*0.12*smoothstep(0.9,1.0,sin(r*0.01-uTime*1.5)*0.5+0.5)*fog;
-  // boundary glow
+  col += uGridCol*0.12*uGridAlpha*smoothstep(0.9,1.0,sin(r*0.01-uTime*1.5)*0.5+0.5)*fog;
   float edge=max(abs(p.x),abs(p.y));
   float bnd=smoothstep(uHalf-120.0,uHalf,max(abs(p.x),abs(p.y)));
-  col=mix(col,vec3(1.0,0.1,0.3),bnd*0.7);
+  col=mix(col,uFogCol,bnd*0.7);
   col*=fog;
   frag=vec4(col,1.0);
 }`;
@@ -1601,6 +1609,21 @@ function openLevelUp(){
   const cont=document.getElementById('choices');cont.innerHTML='';
   const picks=rollUpgrades(3);
   document.getElementById('luSub').textContent='LEVEL '+P.level+' — CHOOSE AN UPGRADE';
+
+  // auto-upgrade: pick the highest-rarity option
+  if(G.autoUpgrade){
+    const rarityOrder={common:0,uncommon:1,rare:2,epic:3,legendary:4,mythic:5};
+    picks.sort((a,b)=>(rarityOrder[b.rarity]||0)-(rarityOrder[a.rarity]||0));
+    const best=picks[0];
+    setTimeout(()=>{
+      Audio.ui();best.apply();levelQueue--;
+      document.getElementById('levelup').classList.remove('show');
+      G.levelOpen=false;updateLoadout();
+      if(levelQueue>0)setTimeout(openLevelUp,120);else G.paused=false;
+      notify('AUTO: '+best.name.toUpperCase(),RAR[best.rarity].c);
+    },400);
+  }
+
   picks.forEach(u=>{
     const d=document.createElement('div');d.className='choice';d.style.borderColor=RAR[u.rarity].c;
     d.innerHTML=`<div class="ci">${u.icon}</div><div class="cn">${u.name}</div>
@@ -2446,6 +2469,16 @@ function update(rdt){
   P.regenAcc+=regen*sdt;if(P.regenAcc>=1){const add=Math.floor(P.regenAcc);P.regenAcc-=add;if(!P.downed&&add>0)heal(add);}
   if(P.invuln>0&&!P.downed)P.invuln-=rdt;
   if(!P.abilityCD)P.abilityCD=[];for(let i=0;i<ABILITIES.length;i++)if(P.abilityCD[i]>0)P.abilityCD[i]-=rdt;
+  // auto-abilities: cast off-cooldown abilities
+  if(G.autoAbilities&&!P.downed&&G.running){
+    for(let ai=0;ai<ABILITIES.length;ai++){
+      if((P.abilityCD[ai]||0)<=0){
+        // skip dash (index 0) — auto-dash on dash charge if HP below 40%
+        if(ai===0){if(P.hp>P.maxhp*0.4||P.dashCharges<=0)continue;}
+        useAbility(ai);break; // one per frame max
+      }
+    }
+  }
   if(P.dashCharges<P.dashMax){P.dashRe=(P.dashRe||0)+rdt;if(P.dashRe>1.5){P.dashRe=0;P.dashCharges++;}}
   Grid.rebuild();
   if(!P.downed)fireWeapon(sdt);
@@ -2863,6 +2896,152 @@ Object.assign(window,{
   WEAPONS,ABILITIES,BOSSES,ETYPES,TREE,ITEMS,RELIC_POOL:window.RELIC_POOL,
   Coop,P2,Input,Grid,R,FX,Audio
 });
+
+/* =================== GLB MODEL LOADER =================== */
+/* Lightweight GLB binary parser — extracts geometry and registers
+   with R.makeMesh() so the game's instanced renderer draws them. */
+function parseGLB(buf){
+  const dv=new DataView(buf);
+  const magic=dv.getUint32(0,true);
+  if(magic!==0x46546C67)return null; // glTF magic
+  const ver=dv.getUint32(4,true);
+  const totalLen=dv.getUint32(8,true);
+  let jsonChunk=null, binChunk=null;
+  let off=12;
+  while(off<totalLen){
+    const cLen=dv.getUint32(off,true); off+=4;
+    const cType=dv.getUint32(off,true); off+=4;
+    if(cType===0x4E4F534A) jsonChunk=new TextDecoder().decode(new Uint8Array(buf,off,cLen));
+    else if(cType===0x004E4942) binChunk=new Uint8Array(buf,off,cLen);
+    off+=cLen;
+  }
+  if(!jsonChunk||!binChunk)return null;
+  const gltf=JSON.parse(jsonChunk);
+  const bv=binChunk.buffer?binChunk:buf;
+  const bvo=binChunk.byteOffset||0;
+  function getBytes(accessorIdx){
+    const acc=gltf.accessors[accessorIdx];
+    const view=gltf.bufferViews[acc.bufferView];
+    const compSize={5120:1,5121:1,5122:2,5123:2,5124:4,5125:4,5126:4}[acc.componentType]||4;
+    const elemSize=compSize*({SCALAR:1,VEC2:2,VEC3:3,VEC4:4}[acc.type]||3);
+    const data=[];
+    for(let i=0;i<acc.count;i++){
+      const base=bvo+(view.byteOffset||0)+acc.byteOffset+i*elemSize;
+      if(acc.componentType===5126||acc.componentType===5125){
+        const row=[];
+        for(let j=0;j<(acc.type==='VEC4'?4:acc.type==='VEC3'?3:acc.type==='VEC2'?2:1);j++)
+          row.push(dv.getFloat32(base+j*4,true));
+        data.push(row);
+      } else if(acc.componentType===5123||acc.componentType===5124){
+        const row=[];
+        for(let j=0;j<(acc.type==='VEC4'?4:acc.type==='VEC3'?3:acc.type==='VEC2'?2:1);j++)
+          row.push(dv.getUint16(base+j*2,true));
+        data.push(row);
+      }
+    }
+    return data;
+  }
+  const meshes=[];
+  (gltf.meshes||[]).forEach((mesh,mi)=>{
+    mesh.primitives.forEach(prim=>{
+      const posAcc=prim.attributes.POSITION;
+      const norAcc=prim.attributes.NORMAL;
+      const idxAcc=prim.indices;
+      if(posAcc==null)return;
+      const positions=getBytes(posAcc);
+      const normals=norAcc!=null?getBytes(norAcc):positions.map(()=>[0,1,0]);
+      const indices=idxAcc!=null?getBytes(idxAcc):null;
+      // flatten
+      const verts=[], norms=[], idx=[];
+      positions.forEach(p=>{verts.push(p[0],p[1],p[2]);});
+      normals.forEach(n=>{norms.push(n[0],n[1],n[2]);});
+      if(indices) indices.forEach(i=>{idx.push(i[0]);});
+      else { for(let i=0;i<positions.length;i++)idx.push(i); }
+      // normalize mesh name
+      const name=(mesh.name||('mesh'+mi)).toLowerCase().replace(/[^a-z0-9_]/g,'_');
+      meshes.push({name,verts,norms,idx});
+    });
+  });
+  return meshes;
+}
+
+/* fetch + register a GLB as named mesh types */
+async function loadGLB(url, prefix){
+  try{
+    const resp=await fetch(url);
+    if(!resp.ok)return;
+    const buf=await resp.arrayBuffer();
+    const meshes=parseGLB(buf);
+    if(!meshes)return;
+    meshes.forEach(m=>{
+      const key=prefix+'_'+m.name;
+      try{ R.meshes[key]=R.makeMesh(m.verts,m.norms,m.idx); }catch(_){}
+    });
+    // single merged mesh as default
+    if(meshes.length>1){
+      const allV=[],allN=[],allI=[];let off=0;
+      meshes.forEach(m=>{
+        allV.push(...m.verts);allN.push(...m.norms);
+        m.idx.forEach(i=>allI.push(i+off));
+        off+=m.verts.length/3;
+      });
+      try{ R.meshes[prefix]=R.makeMesh(allV,allN,allI); }catch(_){}
+    } else if(meshes.length===1){
+      try{ R.meshes[prefix]=R.makeMesh(meshes[0].verts,meshes[0].norms,meshes[0].idx); }catch(_){}
+    }
+  }catch(e){console.warn('GLB load failed:',url,e);}
+}
+
+/* Load all models and swap entity meshes */
+async function loadModels(){
+  // wait for R to be ready
+  for(let i=0;i<100;i++){if(window.R&&R.meshes&&R.meshes.cube)break;await new Promise(r=>setTimeout(r,50));}
+
+  await Promise.all([
+    loadGLB('/assets/neon_survivor/player_ship.glb','player_ship'),
+    loadGLB('/assets/neon_survivor/enemies.glb','enemy'),
+    loadGLB('/assets/neon_survivor/bosses.glb','boss'),
+    loadGLB('/assets/neon_survivor/pickups.glb','pickup'),
+    loadGLB('/assets/neon_survivor/weapons.glb','weapon_mdl'),
+    loadGLB('/assets/neon_survivor/environment.glb','env'),
+  ]);
+
+  // swap player mesh
+  if(R.meshes.player_ship){
+    if(typeof window.drawR==='function'){
+      const _odr=window.drawR;
+      window.drawR=function(shx,shz){
+        const _op=R.push.bind(R);
+        R.push=function(mesh,x,y,z,sx,sy,sz,r,g,b,em,rot){
+          if(mesh==='sphere'&&x===P.x&&z===P.z&&y===P.y){
+            _op('player_ship',x,y,z,sx,sy,sz,r,g,b,em,rot);
+          } else { _op(mesh,x,y,z,sx,sy,sz,r,g,b,em,rot); }
+        };
+        _odr(shx,shz);
+        R.push=_op;
+      };
+    }
+  }
+
+  // swap enemy meshes if available
+  if(R.meshes.enemy){
+    ETYPES.grunt.mesh='enemy';
+    ETYPES.fast.mesh='enemy';
+    ETYPES.tank.mesh='enemy';
+    ETYPES.exploder.mesh='enemy';
+    ETYPES.shooter.mesh='enemy';
+    ETYPES.sniper.mesh='enemy';
+    ETYPES.drone.mesh='enemy';
+  }
+
+  // swap boss meshes
+  if(R.meshes.boss){
+    BOSSES.forEach((b,i)=>{b.mesh='boss';});
+  }
+
+  console.log('[NeonSurvivor] GLB models loaded:',Object.keys(R.meshes).filter(k=>k.startsWith('player_')||k.startsWith('enemy_')||k.startsWith('boss_')));
+}
+loadModels();
 
 startEngine();
 </script>

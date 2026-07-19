@@ -19,14 +19,15 @@ export default function PlayScreen({ mode, onExit }: Props) {
   const reload = useNeon(s => s.reload);
   const meta = useNeon(s => s.meta);
   const reloadedRef = useRef(false);
+  const firstRunRef = useRef(true);
 
-  // Send settings + map to iframe on game start and when they change
+  // Send settings to iframe when they change mid-game (not on initial start — that's handled above)
   useEffect(() => {
-    if (started && sendSettings) {
+    if (started && sendSettings && !firstRunRef.current) {
       sendSettings(meta.settings);
-      if (sendMap) sendMap(meta.settings.selectedMap || 'neon_grid');
     }
-  }, [started, meta.settings, sendSettings, sendMap]);
+    if (started) firstRunRef.current = false;
+  }, [started, meta.settings, sendSettings]);
 
   useEffect(() => {
     const onChange = (e: Event) => {
@@ -39,10 +40,14 @@ export default function PlayScreen({ mode, onExit }: Props) {
     return () => window.removeEventListener('neon-settings-change', onChange);
   }, [meta.settings, sendSettings]);
 
-  // Start the game once the iframe reports ready
+  // Start the game once the iframe reports ready — send settings/map BEFORE start
   useEffect(() => {
     if (ready && !started) {
-      const t = setTimeout(() => { startGame(mode); setStarted(true); }, 150);
+      const t = setTimeout(() => {
+        sendSettings(meta.settings);
+        if (sendMap) sendMap(meta.settings.selectedMap || 'neon_grid');
+        setTimeout(() => { startGame(mode); setStarted(true); }, 80);
+      }, 150);
       return () => clearTimeout(t);
     }
   }, [ready, started, mode, startGame]);
@@ -348,7 +353,7 @@ function RunHint() {
             <div className="neon-panel px-4 py-2 font-mono-neon text-[11px] tracking-widest neon-text-dim whitespace-nowrap">
               <span style={{ color: 'var(--neon-cyan)' }}>WASD</span> MOVE ·
               <span style={{ color: 'var(--neon-mag)' }}> SPACE</span> DASH ·
-              <span style={{ color: 'var(--neon-yel)' }}> 1-9</span> ABILITIES ·
+              <span style={{ color: 'var(--neon-yel)' }}> MOUSE</span> AIM ·
               <span style={{ color: 'var(--neon-red)' }}> ESC</span> PAUSE
             </div>
           )}

@@ -177,13 +177,10 @@ export const ACHIEVEMENTS: AchievementDef[] = [
 export const CONTROLS = [
   { keys:['WASD'], action:'Move' },
   { keys:['Mouse'], action:'Aim (auto-fire ON)' },
-  { keys:['L-Click'], action:'Overdrive (hold for 2× fire rate)' },
+  { keys:['L-Click'], action:'Overdrive (hold for 2x fire rate)' },
   { keys:['Space'], action:'Dash' },
-  { keys:['1','9'], action:'Abilities' },
+  { keys:['1-9'], action:'Abilities (or enable AUTO in Settings)' },
   { keys:['Q','E'], action:'Swap weapon' },
-  { keys:['T'], action:'Skill tree' },
-  { keys:['I'], action:'Inventory' },
-  { keys:['G'], action:'Toggle local co-op (P2)' },
   { keys:['Esc'], action:'Pause' },
 ];
 

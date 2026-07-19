@@ -21,7 +21,6 @@ export default function Home() {
 
   const play = useCallback((m: string) => { setMode(m); setScreen('play'); }, []);
   const back = useCallback(() => setScreen('menu'), []);
-  const goToMapSelect = useCallback((m: string) => { setMode(m); setScreen('mapselect'); }, []);
 
   return (
     <main className="relative min-h-screen w-full overflow-x-hidden flex flex-col" role="main" aria-label="Neon Survivor">
@@ -43,7 +42,10 @@ export default function Home() {
             <LandingScreen key="landing" onEnter={() => setScreen('menu')} />
           )}
           {screen === 'menu' && (
-            <MainMenu key="menu" onPlay={goToMapSelect} onNav={s => setScreen(s as Screen)} />
+            <MainMenu key="menu" onPlay={play} onNav={s => {
+              if (s === 'mapselect') { setScreen('mapselect'); }
+              else { setScreen(s as Screen); }
+            }} />
           )}
           {screen === 'stats' && <StatsScreen key="stats" onBack={back} />}
           {screen === 'arsenal' && <ArsenalScreen key="arsenal" onBack={back} />}
