@@ -3446,6 +3446,21 @@ async function loadGLB(url, prefix){
     const buf=await resp.arrayBuffer();
     const meshes=await parseGLB(buf);
     if(!meshes||!meshes.length){console.warn('[GLB] No meshes parsed from '+url);return;}
+    // Validate vertex data before makeMesh
+    meshes.forEach((m,mi)=>{
+      let vMin=Infinity,vMax=-Infinity, hasNan=false, hasInf=false;
+      for(let i=0;i<m.verts.length;i++){
+        const v=m.verts[i];
+        if(!isFinite(v)){hasNan=true;break;}
+        if(v<vMin)vMin=v;if(v>vMax)vMax=v;
+      }
+      let iMax=0;
+      for(let i=0;i<m.idx.length;i++){if(m.idx[i]>iMax)iMax=m.idx[i];}
+      const vCount=m.verts.length/3;
+      const oob=iMax>=vCount;
+      if(hasNan||oob)console.warn('[GLB] BAD DATA for',prefix+'_'+m.name,'nan='+hasNan,'oob='+oob,'iMax='+iMax+'/'+vCount,'vRange=['+vMin.toFixed(2)+','+vMax.toFixed(2)+'] count='+m.verts.length);
+      else if(mi<3)console.log('[GLB] OK',prefix+'_'+m.name,'verts='+m.verts.length,'idx='+m.idx.length,'vRange=['+vMin.toFixed(2)+','+vMax.toFixed(2)+']');
+    });
     meshes.forEach(m=>{
       const key=prefix+'_'+m.name;
       try{ R.meshes[key]=R.makeMesh(m.verts,m.norms,m.idx); }
