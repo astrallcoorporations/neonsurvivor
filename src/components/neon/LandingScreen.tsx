@@ -64,12 +64,27 @@ export function LandingScreen({ onEnter }: { onEnter: () => void }) {
         </div>
       </div>
 
+      {/* decorative dots row */}
+      <div className="hidden sm:flex gap-[3px] mb-2 opacity-30">
+        {Array.from({ length: 30 }).map((_, i) => (
+          <div key={i} className="w-[2px] h-[2px] rounded-full" style={{ backgroundColor: 'rgb(34,230,255)' }} />
+        ))}
+      </div>
+
       {/* title block */}
       <motion.div
         initial={{ scale: 0.92, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.9, ease: [0.2, 0.8, 0.2, 1] }}
-        className="text-center"
+        className="text-center relative"
       >
+        {/* dither accent strip on the right */}
+        <div className="hidden lg:block absolute -right-6 top-0 bottom-0 w-[3px] opacity-30"
+          style={{
+            backgroundImage:
+              'repeating-linear-gradient(0deg, transparent 0px, transparent 1px, rgb(34,230,255) 1px, rgb(34,230,255) 2px), repeating-linear-gradient(90deg, transparent 0px, transparent 1px, rgb(34,230,255) 1px, rgb(34,230,255) 2px)',
+            backgroundSize: '3px 3px',
+          }}
+        />
         <div className="font-mono-neon text-[10px] sm:text-xs tracking-[0.4em] mb-3 neon-pulse" style={{ color: 'var(--neon-cyan)' }}>
           ▰▰▰ SYSTEM ONLINE ▰▰▰
         </div>
@@ -88,10 +103,17 @@ export function LandingScreen({ onEnter }: { onEnter: () => void }) {
         </motion.div>
       </motion.div>
 
+      {/* decorative divider */}
+      <div className="flex items-center gap-2 mt-8 mb-2 w-64 mx-auto opacity-25">
+        <div className="flex-1 h-px" style={{ backgroundColor: 'rgba(34,230,255,0.5)' }} />
+        <span className="text-[9px] font-mono" style={{ color: 'rgba(34,230,255,0.6)' }}>∞</span>
+        <div className="flex-1 h-px" style={{ backgroundColor: 'rgba(34,230,255,0.5)' }} />
+      </div>
+
       {/* boot progress */}
       <motion.div
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }}
-        className="mt-16 w-full max-w-md"
+        className="mt-2 w-full max-w-md"
       >
         <div className="flex items-center justify-between mb-2 font-mono-neon text-[10px] tracking-widest">
           <span style={{ color: 'var(--neon-cyan)' }} className="neon-text-glow">
@@ -111,32 +133,44 @@ export function LandingScreen({ onEnter }: { onEnter: () => void }) {
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
             className="mt-12 flex flex-col items-center gap-3"
           >
-            <motion.button
-              animate={{ scale: [1, 1.04, 1] }}
-              transition={{ duration: 1.8, repeat: Infinity }}
-              onClick={onEnter}
-              className="group relative px-10 py-3.5 text-base font-display tracking-[0.3em] bg-transparent border transition-all duration-200"
-              style={{
-                borderColor: 'rgba(34,230,255,0.6)',
-                color: 'rgb(34,230,255)',
-                boxShadow: '0 0 30px rgba(34,230,255,.15)',
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.backgroundColor = 'rgba(34,230,255,0.1)';
-                e.currentTarget.style.boxShadow = '0 0 40px rgba(34,230,255,.3)';
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.backgroundColor = 'transparent';
-                e.currentTarget.style.boxShadow = '0 0 30px rgba(34,230,255,.15)';
-              }}
-            >
-              {/* corner brackets on hover */}
-              <span className="absolute -top-[3px] -left-[3px] w-2 h-2 border-t-2 border-l-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200" style={{ borderColor: 'rgb(34,230,255)' }} />
-              <span className="absolute -bottom-[3px] -right-[3px] w-2 h-2 border-b-2 border-r-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200" style={{ borderColor: 'rgb(34,230,255)' }} />
-              ▶ ENTER THE GRID
-            </motion.button>
+            <div className="relative">
+              {/* corner accent with dot */}
+              <div className="hidden lg:block absolute -left-4 top-1/2 w-3 h-3 border opacity-30" style={{ borderColor: 'rgba(34,230,255,0.5)', transform: 'translateY(-50%)' }}>
+                <div className="absolute top-1/2 left-1/2 w-[3px] h-[3px]" style={{ backgroundColor: 'rgb(34,230,255)', transform: 'translate(-50%, -50%)' }} />
+              </div>
+              <motion.button
+                animate={{ scale: [1, 1.04, 1] }}
+                transition={{ duration: 1.8, repeat: Infinity }}
+                onClick={onEnter}
+                className="group relative px-10 py-3.5 text-base font-display tracking-[0.3em] bg-transparent border transition-all duration-200"
+                style={{
+                  borderColor: 'rgba(34,230,255,0.6)',
+                  color: 'rgb(34,230,255)',
+                  boxShadow: '0 0 30px rgba(34,230,255,.15)',
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.backgroundColor = 'rgba(34,230,255,0.1)';
+                  e.currentTarget.style.boxShadow = '0 0 40px rgba(34,230,255,.3)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.boxShadow = '0 0 30px rgba(34,230,255,.15)';
+                }}
+              >
+                {/* corner brackets on hover */}
+                <span className="absolute -top-[3px] -left-[3px] w-2 h-2 border-t-2 border-l-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200" style={{ borderColor: 'rgb(34,230,255)' }} />
+                <span className="absolute -bottom-[3px] -right-[3px] w-2 h-2 border-b-2 border-r-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200" style={{ borderColor: 'rgb(34,230,255)' }} />
+                ▶ ENTER THE GRID
+              </motion.button>
+            </div>
             <div className="font-mono-neon text-[10px] tracking-[0.3em] neon-text-faint neon-pulse">
               CLICK OR PRESS ENTER
+            </div>
+            {/* technical notation */}
+            <div className="hidden lg:flex items-center gap-2 mt-4 opacity-30">
+              <span className="text-[9px] font-mono" style={{ color: 'rgba(255,43,214,0.6)' }}>∞</span>
+              <div className="flex-1 h-px" style={{ backgroundColor: 'rgba(255,43,214,0.3)' }} />
+              <span className="text-[9px] font-mono tracking-wider" style={{ color: 'rgba(255,43,214,0.5)' }}>SURVIVOR.PROTOCOL</span>
             </div>
           </motion.div>
         )}
