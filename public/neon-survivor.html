@@ -622,18 +622,7 @@ window.log=function(msg,type){
   else console.log(msg);
 };
 function log(msg,type){window.log(msg,type);}
-// Toggle debug panel with L key (or F3 as backup)
-addEventListener('keydown',e=>{
-  const k=e.key.toLowerCase();
-  if(k==='l'||k==='f3'){
-    const p=document.getElementById('deblog');
-    if(p){
-      e.preventDefault();
-      e.stopPropagation();
-      p.style.display=p.style.display==='none'?'block':'none';
-    }
-  }
-});
+window._debLog=0;
 log('Debug logger ready — press L to toggle','info');
 
 // master game object
@@ -2660,6 +2649,12 @@ if(typeof resetGame==='function'){const _rg=resetGame;resetGame=function(mode){_
 /* ======================= UPDATE ======================= */
 function update(rdt){
   const sdt=rdt*G.globalSlow;
+  // L key toggle debug panel (debounced via Input.keys + frame gap)
+  if(Input.keys['l']&&Math.abs(G.t-window._debLog)>200){
+    window._debLog=G.t;
+    const p=document.getElementById('deblog');
+    if(p)p.style.display=p.style.display==='none'?'block':'none';
+  }
   if(G.slowT>0){G.slowT-=rdt;if(G.slowT<=0)G.globalSlow=1;else G.globalSlow=lerp(G.globalSlow,1,rdt*1.5);}
   if(G.enemySlowT>0){G.enemySlowT-=rdt;if(G.enemySlowT<=0)G.enemySlow=1;}
   G.gameTime+=sdt;
