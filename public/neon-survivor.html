@@ -3294,82 +3294,40 @@ Object.assign(window,{
   Coop,P2,Input,Grid,R,FX,Audio,Net
 });
 
-/* =================== GLB MODEL LOADER =================== */
-/* Lightweight GLB binary parser — extracts geometry and registers
-   with R.makeMesh() so the game's instanced renderer draws them. */
-function parseGLB(buf){
-  const dv=new DataView(buf);
-  const magic=dv.getUint32(0,true);
-  if(magic!==0x46546C67)return null; // glTF magic
-  const ver=dv.getUint32(4,true);
-  const totalLen=dv.getUint32(8,true);
-  let jsonChunk=null, binChunk=null;
-  let off=12;
-  while(off<totalLen){
-    const cLen=dv.getUint32(off,true); off+=4;
-    const cType=dv.getUint32(off,true); off+=4;
-    if(cType===0x4E4F534A) jsonChunk=new TextDecoder().decode(new Uint8Array(buf,off,cLen));
-    else if(cType===0x004E4942) binChunk=new Uint8Array(buf,off,cLen);
-    off+=cLen;
+/* =================== GLB MODEL LOADER (Three.js) =================== */
+/* Uses Three.js GLTFLoader for bulletproof GLB parsing.
+   Three.js is already loaded via importmap on line 399.
+   Extracts vertex/normal/index arrays and feeds them into R.makeMesh()
+   for instanced rendering. */
+let _gltfLoader = null;
+async function parseGLB(buf){
+  if (!_gltfLoader) {
+    const { GLTFLoader } = await import('three/addons/loaders/GLTFLoader.js');
+    _gltfLoader = new GLTFLoader();
   }
-  if(!jsonChunk||!binChunk)return null;
-  const gltf=JSON.parse(jsonChunk);
-  const binStart=binChunk.byteOffset||0;
-  function getBytes(accessorIdx){
-    const acc=gltf.accessors[accessorIdx];
-    const view=gltf.bufferViews[acc.bufferView];
-    const compSize={5120:1,5121:1,5122:2,5123:2,5124:4,5125:4,5126:4}[acc.componentType]||4;
-    const numComps={SCALAR:1,VEC2:2,VEC3:3,VEC4:4}[acc.type]||3;
-    const elemSize=compSize*numComps;
-    const stride=view.byteStride||elemSize;
-    const data=[];
-    for(let i=0;i<acc.count;i++){
-      const base=binStart+(view.byteOffset||0)+acc.byteOffset+i*stride;
-      const row=[];
-      for(let j=0;j<numComps;j++){
-        const off2=base+j*compSize;
-        if(acc.componentType===5126){
-          row.push(dv.getFloat32(off2,true));
-        } else if(acc.componentType===5125){
-          row.push(dv.getUint32(off2,true));
-        } else if(acc.componentType===5123){
-          row.push(dv.getUint16(off2,true));
-        } else if(acc.componentType===5122){
-          row.push(dv.getInt16(off2,true));
-        } else if(acc.componentType===5124){
-          row.push(dv.getInt32(off2,true));
-        } else if(acc.componentType===5121){
-          row.push(dv.getUint8(off2));
-        } else if(acc.componentType===5120){
-          row.push(dv.getInt8(off2));
-        } else {
-          row.push(dv.getFloat32(off2,true));
-        }
-      }
-      data.push(row);
-    }
-    return data;
-  }
-  const meshes=[];
-  (gltf.meshes||[]).forEach((mesh,mi)=>{
-    mesh.primitives.forEach((prim,pi)=>{
-      const posAcc=prim.attributes.POSITION;
-      const norAcc=prim.attributes.NORMAL;
-      const idxAcc=prim.indices;
-      if(posAcc==null)return;
-      const positions=getBytes(posAcc);
-      const normals=norAcc!=null?getBytes(norAcc):positions.map(()=>[0,1,0]);
-      const indices=idxAcc!=null?getBytes(idxAcc):null;
-      const verts=[], norms=[], idx=[];
-      positions.forEach(p=>{verts.push(p[0],p[1],p[2]);});
-      normals.forEach(n=>{norms.push(n[0],n[1],n[2]);});
-      if(indices) indices.forEach(i=>{idx.push(i[0]);});
-      else { for(let i=0;i<positions.length;i++)idx.push(i); }
-      let name=(mesh.name||('mesh'+mi)).toLowerCase().replace(/[^a-z0-9_]/g,'_');
-      if(mesh.primitives.length>1) name+='_prim'+pi;
-      meshes.push({name,verts,norms,idx});
-    });
+  const result = await new Promise((resolve, reject) => {
+    _gltfLoader.parse(buf, '', resolve, reject);
   });
+  const meshes = [];
+  result.scene.traverse(child => {
+    if (child.isMesh) {
+      const geo = child.geometry;
+      if (!geo) return;
+      const pos = geo.getAttribute('position');
+      if (!pos) return;
+      const norm = geo.getAttribute('normal');
+      const idx = geo.index;
+      const verts = Array.from(pos.array);
+      const norms = norm ? Array.from(norm.array) : [];
+      const indices = idx ? Array.from(idx.array) : [...Array(pos.count).keys()];
+      let name = (child.name || 'mesh').toLowerCase().replace(/[^a-z0-9_]/g, '_');
+      if (!name) name = 'mesh';
+      meshes.push({ name, verts, norms, idx: indices });
+    }
+  });
+  if (!meshes.length) {
+    console.warn('[GLB] Three.js parse returned no meshes — using fallback primitives');
+  }
   return meshes;
 }
 
@@ -3379,7 +3337,7 @@ async function loadGLB(url, prefix){
     const resp=await fetch(url);
     if(!resp.ok){console.warn('[GLB] HTTP '+resp.status+' for '+url);return;}
     const buf=await resp.arrayBuffer();
-    const meshes=parseGLB(buf);
+    const meshes=await parseGLB(buf);
     if(!meshes||!meshes.length){console.warn('[GLB] No meshes parsed from '+url);return;}
     meshes.forEach(m=>{
       const key=prefix+'_'+m.name;
