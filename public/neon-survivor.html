@@ -408,7 +408,7 @@ body.embedded #gameover{display:none !important}
 <div id="hud">
   <div id="tl">
     <div class="bar" id="hpbar"><span></span><b id="hptxt">100/100</b></div>
-    <button id="debBtn" style="margin-left:6px;background:rgba(34,230,255,0.15);border:1px solid rgba(34,230,255,0.3);border-radius:4px;color:#22e6ff;font:11px monospace;padding:2px 8px;cursor:pointer" onclick="var p=document.getElementById('deblog');if(p)p.style.display=p.style.display==='none'?'block':'none'">D</button>
+    <button id="debBtn" style="margin-left:6px;background:rgba(34,230,255,0.15);border:1px solid rgba(34,230,255,0.3);border-radius:4px;color:#22e6ff;font:11px monospace;padding:2px 8px;cursor:pointer;pointer-events:auto" onclick="var p=document.getElementById('deblog');if(p)p.style.display=p.style.display==='none'?'block':'none'">D</button>
     <div class="bar" id="xpbar"><span></span></div>
     <div id="statline">
       <div class="lv">LV <span id="lvl">1</span></div>
@@ -472,13 +472,13 @@ body.embedded #gameover{display:none !important}
     </div>
     <div class="row" style="margin-top:14px"><button class="btn" style="width:auto;padding:10px 26px" id="howBtn">HOW TO PLAY</button></div>
   </div>
-  <!-- Debug Log Panel -->
-  <div id="deblog" style="position:absolute;right:10px;bottom:60px;z-index:100;width:480px;max-height:360px;overflow-y:auto;background:rgba(0,0,0,0.88);border:1px solid rgba(34,230,255,0.3);border-radius:6px;padding:6px 10px;font:10px monospace;color:#b8c4d8;pointer-events:auto">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;padding-bottom:4px;border-bottom:1px solid rgba(34,230,255,0.15)">
-      <span style="color:#22e6ff;font-weight:bold;font-size:11px;letter-spacing:1px">■ DEBUG LOG</span>
-      <span id="deblogCount" style="color:rgba(255,255,255,0.3);font-size:9px">0 entries</span>
+  <!-- Debug Log Panel - big, covers right half of screen -->
+  <div id="deblog" style="position:fixed;right:0;top:0;width:50%;height:100%;z-index:999;overflow-y:auto;background:rgba(0,0,0,0.92);border-left:2px solid #22e6ff;padding:10px 14px;font:12px monospace;color:#b8c4d8;pointer-events:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid rgba(34,230,255,0.2)">
+      <span style="color:#22e6ff;font-weight:bold;font-size:14px;letter-spacing:2px">■ DEBUG LOG</span>
+      <span id="deblogCount" style="color:rgba(255,255,255,0.3);font-size:10px">0 entries</span>
     </div>
-    <div id="deblogBody"></div>
+    <div id="deblogBody" style="font-size:11px;line-height:1.5"></div>
   </div>
 </div>
 
@@ -2650,12 +2650,13 @@ if(typeof resetGame==='function'){const _rg=resetGame;resetGame=function(mode){_
 /* ======================= UPDATE ======================= */
 function update(rdt){
   const sdt=rdt*G.globalSlow;
-  // L key toggle debug panel (debounced via Input.keys + frame gap)
-  if(Input.keys['l']&&Math.abs(G.t-window._debLog)>200){
-    window._debLog=G.t;
+  // L key toggle debug panel (edge-triggered)
+  if(Input.keys['l']&&!window._lWas){
+    window._lWas=true;
     const p=document.getElementById('deblog');
     if(p)p.style.display=p.style.display==='none'?'block':'none';
   }
+  if(!Input.keys['l'])window._lWas=false;
   if(G.slowT>0){G.slowT-=rdt;if(G.slowT<=0)G.globalSlow=1;else G.globalSlow=lerp(G.globalSlow,1,rdt*1.5);}
   if(G.enemySlowT>0){G.enemySlowT-=rdt;if(G.enemySlowT<=0)G.enemySlow=1;}
   G.gameTime+=sdt;
