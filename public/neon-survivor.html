@@ -3532,6 +3532,10 @@ async function loadGLB(url, prefix){
         m.idx.forEach(i=>allI.push(i+voff));
         voff+=m.verts.length/3;
       });
+      if(prefix==='player_ship'||prefix==='boss'){
+        log(prefix+': verts='+allV.length+' norms='+allN.length+' idx='+allI.length+(allV.length!==allN.length?' NORM_MISMATCH!':''),'info');
+        if(allV.length>8)log(prefix+' v='+allV.slice(0,3).map(v=>v.toFixed(2)).join()+' '+allV.slice(3,6).map(v=>v.toFixed(2)).join()+' '+allV.slice(6,9).map(v=>v.toFixed(2)).join(),'info');
+      }
       try{ R.meshes[prefix]=R.makeMesh(allV,allN,allI); }
       catch(e){log('merged makeMesh failed for '+prefix+': '+e.message,'error');}
     } else if(meshes.length===1){
