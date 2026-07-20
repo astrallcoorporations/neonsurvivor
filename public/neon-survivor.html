@@ -472,7 +472,7 @@ body.embedded #gameover{display:none !important}
     <div class="row" style="margin-top:14px"><button class="btn" style="width:auto;padding:10px 26px" id="howBtn">HOW TO PLAY</button></div>
   </div>
   <!-- Debug Log Panel -->
-  <div id="deblog" style="position:absolute;right:10px;bottom:60px;z-index:10;width:480px;max-height:360px;overflow-y:auto;background:rgba(0,0,0,0.88);border:1px solid rgba(34,230,255,0.3);border-radius:6px;padding:6px 10px;font:10px monospace;color:#b8c4d8;display:none;pointer-events:auto">
+  <div id="deblog" style="position:absolute;right:10px;bottom:60px;z-index:100;width:480px;max-height:360px;overflow-y:auto;background:rgba(0,0,0,0.88);border:1px solid rgba(34,230,255,0.3);border-radius:6px;padding:6px 10px;font:10px monospace;color:#b8c4d8;pointer-events:auto">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;padding-bottom:4px;border-bottom:1px solid rgba(34,230,255,0.15)">
       <span style="color:#22e6ff;font-weight:bold;font-size:11px;letter-spacing:1px">■ DEBUG LOG</span>
       <span id="deblogCount" style="color:rgba(255,255,255,0.3);font-size:9px">0 entries</span>
@@ -622,11 +622,16 @@ window.log=function(msg,type){
   else console.log(msg);
 };
 function log(msg,type){window.log(msg,type);}
-// Toggle debug panel with L key
+// Toggle debug panel with L key (or F3 as backup)
 addEventListener('keydown',e=>{
-  if(e.key.toLowerCase()==='l'&&e.target===document.body){
+  const k=e.key.toLowerCase();
+  if(k==='l'||k==='f3'){
     const p=document.getElementById('deblog');
-    if(p){p.style.display=p.style.display==='none'?'block':'none';}
+    if(p){
+      e.preventDefault();
+      e.stopPropagation();
+      p.style.display=p.style.display==='none'?'block':'none';
+    }
   }
 });
 log('Debug logger ready — press L to toggle','info');
@@ -2851,6 +2856,14 @@ function draw(){
 function drawR(shx,shz){
   R.setCam(P.x,P.z,shx,shz);R.begin();
   const pulse=0.5+Math.sin(G.t*0.006)*0.2+(P.invuln>0?0.5:0);
+  // test triangle — a bright cyan triangle floating at player position
+  if(!R.meshes._testTri){
+    const tv=[0,0,0, 30,0,0, 0,30,0], tn=[0,0,1, 0,0,1, 0,0,1], ti=[0,1,2];
+    R.meshes._testTri=R.makeMesh(tv,tn,ti);
+    log('Added test triangle mesh','info');
+  }
+  R.push('_testTri',P.x+60,P.y,P.z, 40,40,40, 0,1,1, 1.5, G.t*0.005);
+  // glb player ship
   R.push(R.meshes.player_ship?'player_ship':'sphere',P.x,P.y,P.z,P.radius*2.2,P.radius*2.2,P.radius*2.2,P.downed?0.6:1,P.downed?0.2:1,P.downed?0.3:1,pulse,0);
   const w=curWeapon();R.push(R.meshes.weapon_mdl?'weapon_mdl':'cube',P.x+P.aimX*34,26,P.z+P.aimZ*34,64,14,14,w.col[0],w.col[1],w.col[2],1.1,P.angle);
   if(Coop.active&&!P2.downed)R.push(R.meshes.player_ship?'player_ship':'sphere',P2.x,P2.y,P2.z,P2.radius*2.1,P2.radius*2.1,P2.radius*2.1,0.3,1,0.5,0.7,0);
