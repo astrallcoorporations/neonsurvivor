@@ -2819,11 +2819,6 @@ function drawR(shx,shz){
   const w=curWeapon();R.push(R.meshes.weapon_mdl?'weapon_mdl':'cube',P.x+P.aimX*34,26,P.z+P.aimZ*34,64,14,14,w.col[0],w.col[1],w.col[2],1.1,P.angle);
   if(Coop.active&&!P2.downed)R.push(R.meshes.player_ship?'player_ship':'sphere',P2.x,P2.y,P2.z,P2.radius*2.1,P2.radius*2.1,P2.radius*2.1,0.3,1,0.5,0.7,0);
   drawRemotePlayers();
-  // Debug: log what mesh key the player is using
-  if(!window._dbg){window._dbg=0;window._dbg2='';}
-  window._dbg++;
-  const playerKey=R.meshes.player_ship?'player_ship':'sphere';
-  if(window._dbg%60===0)console.log('[DBG] Player mesh key:',playerKey,'| ship exists:',!!R.meshes.player_ship,'| meshes count:',Object.keys(R.meshes).length);
   if(window._envProps){
     const viewR=1800;
     for(let i=0;i<_envProps.length;i++){
@@ -2858,42 +2853,29 @@ function drawR(shx,shz){
     R.push(R.meshes.pickup_pickup_xp?'pickup_pickup_xp':'diamond',l.x,l.y||20,l.z,30,30,30,c[0],c[1],c[2],1.4,l.t||0);}
   for(let i=0;i<bullets.length;i++){const b=bullets[i];const z=(b.size||10);R.push('cube',b.x,24,b.z,z*2.6,z*0.9,z*1.0,b.r,b.g,b.b,1.2,-(b.ang||0));}
   for(let i=0;i<ebullets.length;i++){const b=ebullets[i];const z=(b.size||10);R.push('sphere',b.x,24,b.z,z*1.6,z*1.6,z*1.6,b.r,b.g,b.b,1.0,b.spin||0);}
-  // DIAGNOSTIC RENDER TEST: draw a red cube and green player_ship side by side
-  // If red cube appears -> instance system works. If green player_ship doesn't appear -> mesh data issue
-  R.push('cube', P.x+150, 50, P.z, 40,40,40, 1,0,0, 1, 0);
-  if(R.meshes.player_ship) R.push('player_ship', P.x-150, 50, P.z, 40,40,40, 0,1,0, 1, 0);
-  // Also draw a blue sphere for reference
-  R.push('sphere', P.x, 50, P.z+150, 40,40,40, 0,0,1, 1, 0);
-  // WebGL error check after draw
-  const gl=R.gl;
-  const _err = gl.getError();
-  if (_err !== gl.NO_ERROR) console.error('[WebGL] Error after mesh push:', _err);
   R.render();
-  const _err2 = gl.getError();
-  if (_err2 !== gl.NO_ERROR) console.error('[WebGL] Error after render:', _err2);
 }
 
 /* ======================= DRAW (2D FX OVERLAY) ======================= */
 function drawFX(){
   const ctx=FX.ctx;if(!ctx)return;ctx.clearRect(0,0,FX.W,FX.H);
-  // Diagnostic overlay - shows mesh loading status (top-left, dark background for readability)
+  // Diagnostic overlay - shows mesh loading status (top-left area, bigger)
   if(window.R&&R.meshes){
     const pShip=!!R.meshes.player_ship, pInst=R.meshes.player_ship?R.meshes.player_ship.n:0;
     const pKey=pShip?'player_ship':'sphere';
-    const pCount=R.meshes.player_ship?R.meshes.player_ship.count:0;
-    ctx.textAlign='left';
-    ctx.font='bold 14px monospace';
-    ctx.shadowBlur=0;
-    // dark background box
-    ctx.fillStyle='rgba(0,0,0,0.6)';
-    ctx.fillRect(4,4,450,52);
-    ctx.fillStyle='#ffff88';
-    ctx.fillText('DBG k='+pKey+' ship='+pShip+' n='+pInst+' tri='+pCount+' tot='+Object.keys(R.meshes).length, 10,22);
     const m=R.meshes.player_ship;
-    if(m) ctx.fillText('   pos='+m.arr[0].toFixed(0)+','+m.arr[1].toFixed(0)+','+m.arr[2].toFixed(0)+' s='+m.arr[3].toFixed(1), 10,42);
-    // Also log snapshot to console every 120 frames
-    if(!window._dbgf){window._dbgf=0;}window._dbgf++;
-    if(window._dbgf%120===0&&m)console.log('[DBG] player_ship instance0:',Array.from(m.arr.subarray(0,11)).map(v=>v.toFixed(2)));
+    ctx.save();
+    ctx.textAlign='left';
+    ctx.font='900 18px monospace';
+    ctx.shadowBlur=0;
+    // large solid bg box
+    ctx.fillStyle='rgba(0,0,0,0.85)';
+    ctx.fillRect(4,4,520,60);
+    ctx.fillStyle='#ff0';
+    ctx.fillText('MESH: '+pKey+'  N='+pInst+'  TRI='+(m?m.count:0)+'  TOTAL='+Object.keys(R.meshes).length, 10,30);
+    ctx.fillStyle='#0ff';
+    if(m) ctx.fillText('POS: '+m.arr[0].toFixed(0)+','+m.arr[1].toFixed(0)+','+m.arr[2].toFixed(0)+'  SCL='+m.arr[3].toFixed(1), 10,54);
+    ctx.restore();
   }
   // particles
   for(let i=0;i<particles.length;i++){const p=particles[i];const c=FX.project(p.x,p.z);if(!c)continue;const a=clamp(p.life/p.max,0,1);
