@@ -408,6 +408,7 @@ body.embedded #gameover{display:none !important}
 <div id="hud">
   <div id="tl">
     <div class="bar" id="hpbar"><span></span><b id="hptxt">100/100</b></div>
+    <button id="debBtn" style="margin-left:6px;background:rgba(34,230,255,0.15);border:1px solid rgba(34,230,255,0.3);border-radius:4px;color:#22e6ff;font:11px monospace;padding:2px 8px;cursor:pointer" onclick="var p=document.getElementById('deblog');if(p)p.style.display=p.style.display==='none'?'block':'none'">D</button>
     <div class="bar" id="xpbar"><span></span></div>
     <div id="statline">
       <div class="lv">LV <span id="lvl">1</span></div>
@@ -3389,29 +3390,21 @@ async function parseGLB(buf){
           const rawPos = posAttr.array;
           const rawNorm = geo.getAttribute('normal');
           // Get node world matrix (column-major 16 floats)
-          const m = child.matrixWorld.elements;
-          // Transform each vertex by node matrix
+          // Use raw local-space vertices (no node transform — instanced rendering
+          // adds the world position via the instance buffer, so vertex data must
+          // be local to the model origin)
           const verts = new Float32Array(rawPos.length);
-          for (let i = 0; i < posAttr.count; i++) {
-            const x = rawPos[i*3], y = rawPos[i*3+1], z = rawPos[i*3+2];
-            verts[i*3]   = m[0]*x + m[4]*y + m[8]*z  + m[12];
-            verts[i*3+1] = m[1]*x + m[5]*y + m[9]*z  + m[13];
-            verts[i*3+2] = m[2]*x + m[6]*y + m[10]*z + m[14];
-          }
-          // Transform normals by upper-left 3x3 (handles rotation; shader normalizes)
+          verts.set(rawPos);
           let norms;
           if (rawNorm) {
-            const rn = rawNorm.array;
-            norms = new Float32Array(rn.length);
-            for (let i = 0; i < rawNorm.count; i++) {
-              const x = rn[i*3], y = rn[i*3+1], z = rn[i*3+2];
-              norms[i*3]   = m[0]*x + m[4]*y + m[8]*z;
-              norms[i*3+1] = m[1]*x + m[5]*y + m[9]*z;
-              norms[i*3+2] = m[2]*x + m[6]*y + m[10]*z;
-            }
+            norms = new Float32Array(rawNorm.array.length);
+            norms.set(rawNorm.array);
           } else {
             norms = [];
           }
+          // Still log the node matrix for reference
+          const m = child.matrixWorld.elements;
+          log('Raw local mesh "'+child.name+'" verts='+(rawPos.length/3)+' idx='+(geo.index?geo.index.array.length:0),'info');
           const idx = geo.index;
           const indices = idx ? Array.from(idx.array) : [...Array(posAttr.count).keys()];
           let name = (child.name || 'mesh').toLowerCase().replace(/[^a-z0-9_]/g, '_');
