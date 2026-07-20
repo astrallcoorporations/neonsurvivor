@@ -3316,21 +3316,47 @@ async function parseGLB(buf){
       const result = await new Promise((resolve, reject) => {
         window.__gltfLoader.parse(buf, '', resolve, reject);
       });
+      // Apply node transforms so sub-meshes are in world-space
+      result.scene.updateWorldMatrix(true, true);
       const meshes = [];
       result.scene.traverse(child => {
         if (child.isMesh) {
           const geo = child.geometry;
           if (!geo) return;
-          const pos = geo.getAttribute('position');
-          if (!pos) return;
-          const norm = geo.getAttribute('normal');
+          const posAttr = geo.getAttribute('position');
+          if (!posAttr) return;
+          // Read raw array (clone to avoid mutating THREE internal state)
+          const rawPos = posAttr.array;
+          const rawNorm = geo.getAttribute('normal');
+          // Get node world matrix (column-major 16 floats)
+          const m = child.matrixWorld.elements;
+          // Transform each vertex by node matrix
+          const verts = new Float32Array(rawPos.length);
+          for (let i = 0; i < posAttr.count; i++) {
+            const x = rawPos[i*3], y = rawPos[i*3+1], z = rawPos[i*3+2];
+            verts[i*3]   = m[0]*x + m[4]*y + m[8]*z  + m[12];
+            verts[i*3+1] = m[1]*x + m[5]*y + m[9]*z  + m[13];
+            verts[i*3+2] = m[2]*x + m[6]*y + m[10]*z + m[14];
+          }
+          // Transform normals by upper-left 3x3 (handles rotation; shader normalizes)
+          let norms;
+          if (rawNorm) {
+            const rn = rawNorm.array;
+            norms = new Float32Array(rn.length);
+            for (let i = 0; i < rawNorm.count; i++) {
+              const x = rn[i*3], y = rn[i*3+1], z = rn[i*3+2];
+              norms[i*3]   = m[0]*x + m[4]*y + m[8]*z;
+              norms[i*3+1] = m[1]*x + m[5]*y + m[9]*z;
+              norms[i*3+2] = m[2]*x + m[6]*y + m[10]*z;
+            }
+          } else {
+            norms = [];
+          }
           const idx = geo.index;
-          const verts = Array.from(pos.array);
-          const norms = norm ? Array.from(norm.array) : [];
-          const indices = idx ? Array.from(idx.array) : [...Array(pos.count).keys()];
+          const indices = idx ? Array.from(idx.array) : [...Array(posAttr.count).keys()];
           let name = (child.name || 'mesh').toLowerCase().replace(/[^a-z0-9_]/g, '_');
           if (!name) name = 'mesh';
-          meshes.push({ name, verts, norms, idx: indices });
+          meshes.push({ name, verts: Array.from(verts), norms: Array.from(norms), idx: indices });
         }
       });
       return meshes;
