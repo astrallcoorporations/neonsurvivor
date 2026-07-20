@@ -1051,7 +1051,7 @@ const R={
       gl.bindVertexArray(m.vao);gl.bindBuffer(gl.ARRAY_BUFFER,m.inst);
       gl.bufferSubData(gl.ARRAY_BUFFER,0,m.arr.subarray(0,m.n*11));
       gl.drawElementsInstanced(gl.TRIANGLES,m.count,m.idxType||gl.UNSIGNED_SHORT,0,m.n);}
-    gl.bindVertexArray(null);gl.disable(gl.BLEND);
+    gl.bindVertexArray(null);gl.disable(gl.BLEND);gl.disable(gl.DEPTH_TEST);gl.depthMask(false);
     if(this.bloom)this.postBloom();
   },
   drawGround(){
@@ -1429,6 +1429,10 @@ const ETYPES={
   shooter:{hp:34,speed:95,radius:26,dmg:8,cr:0.5,cg:1,cb:0.6,mesh:'pyramid',xp:5,ai:'kite',shoot:1.6,range:560},
   sniper:{hp:40,speed:60,radius:26,dmg:22,cr:1,cg:0.2,cb:0.5,mesh:'pyramid',xp:7,ai:'snipe',shoot:2.6,range:1000},
   drone:{hp:18,speed:220,radius:18,dmg:6,cr:0.3,cg:0.9,cb:1,mesh:'diamond',xp:3,ai:'strafe',shoot:1.4,range:520},
+  healer:{hp:20,speed:80,radius:24,dmg:0,cr:0.1,cg:1,cb:0.3,mesh:'sphere',xp:8,ai:'kite',range:400},
+  shielded:{hp:60,speed:90,radius:30,dmg:10,cr:0.2,cg:0.3,cb:1,mesh:'cube',xp:6,ai:'chase',range:300},
+  swarm:{hp:8,speed:280,radius:14,dmg:4,cr:1,cg:0.6,cb:0.1,mesh:'diamond',xp:1,ai:'strafe'},
+  turret:{hp:80,speed:0,radius:36,dmg:18,cr:1,cg:0.2,cb:0.8,mesh:'cube',xp:10,ai:'snipe',shoot:0.8,range:700},
 };
 const ENEMY_KEYS=Object.keys(ETYPES);
 
@@ -2824,6 +2828,23 @@ function drawR(shx,shz){
       }
     }
   }
+  // Buildings from World (use env_extra meshes if available)
+  if(window.World&&World.buildings){
+    const bMesh=R.meshes.env_extra_env_billboard?'env_extra_env_billboard':(R.meshes.env_env_neonsign?'env_env_neonsign':'cube');
+    const bs=World.buildings;
+    for(let i=0;i<bs.length;i++){const b=bs[i];
+      if(Math.abs(b.x-P.x)>5200||Math.abs(b.z-P.z)>5200)continue;const h=220*b.scale;
+      R.push(bMesh,b.x,h*0.5,b.z,55*b.scale,h,55*b.scale,0.06,0.13,0.42,b.rot);}
+  }
+  // Effects: shield bubbles on shielded enemies
+  if(window._shieldMesh){
+    for(let i=0;i<enemies.length;i++){const e=enemies[i];
+      const isShielded=e.mesh&&e.mesh.indexOf('shielded')>=0;
+      if(isShielded){
+        R.push(window._shieldMesh,e.x,e.y+5,e.z,e.radius*3,e.radius*3,e.radius*3,0.2,0.4,1,0.5,e.spin);
+      }
+    }
+  }
   for(let i=0;i<enemies.length;i++){const e=enemies[i];let s=e.radius*1.9;
     let em=e.flash>0?2.8:(e.boss?1.0+Math.sin(G.t*0.01)*0.3:0.5);if(e.boss)s*=1+Math.sin(G.t*0.005)*0.04;if(e.elite&&!e.boss)em+=0.4;
     R.push(e.mesh,e.x,e.y,e.z,s,s,s,e.cr,e.cg,e.cb,em,e.spin);}
@@ -2938,11 +2959,8 @@ function drawRemotePlayers(){
   if(!Net.connected||Net.isHost)return;
   const rp=Net.getRemotePlayers();
   for(const [pid,p] of Object.entries(rp)){
-    const meshKey='player_ship';
-    const useR=R.meshes[meshKey];
-    if(useR){
-      R.push(meshKey,p.x,26,p.z,p.radius*2.1,p.radius*2.1,p.radius*2.1,0.3,1,0.5,0.7,p.angle||0);
-    }
+    const meshKey=R.meshes.player_ship?'player_ship':'sphere';
+    R.push(meshKey,p.x,26,p.z,p.radius*2.1,p.radius*2.1,p.radius*2.1,0.3,1,0.5,0.7,p.angle||0);
   }
 }
 function wireUI(){
@@ -3310,12 +3328,16 @@ function parseGLB(buf){
       const row=[];
       for(let j=0;j<numComps;j++){
         const off2=base+j*compSize;
-        if(acc.componentType===5126||acc.componentType===5125){
+        if(acc.componentType===5126){
           row.push(dv.getFloat32(off2,true));
-        } else if(acc.componentType===5123||acc.componentType===5122){
-          row.push(dv.getUint16(off2,true));
-        } else if(acc.componentType===5124){
+        } else if(acc.componentType===5125){
           row.push(dv.getUint32(off2,true));
+        } else if(acc.componentType===5123){
+          row.push(dv.getUint16(off2,true));
+        } else if(acc.componentType===5122){
+          row.push(dv.getInt16(off2,true));
+        } else if(acc.componentType===5124){
+          row.push(dv.getInt32(off2,true));
         } else if(acc.componentType===5121){
           row.push(dv.getUint8(off2));
         } else if(acc.componentType===5120){
@@ -3392,6 +3414,12 @@ async function loadModels(){
     loadGLB('/assets/neon_survivor/pickups.glb','pickup'),
     loadGLB('/assets/neon_survivor/weapons.glb','weapon_mdl'),
     loadGLB('/assets/neon_survivor/environment.glb','env'),
+    loadGLB('/assets/neon_survivor/player_variants.glb','player_variants'),
+    loadGLB('/assets/neon_survivor/enemies_extra.glb','enemy_extra'),
+    loadGLB('/assets/neon_survivor/bosses_extra.glb','boss_extra'),
+    loadGLB('/assets/neon_survivor/environment_extra.glb','env_extra'),
+    loadGLB('/assets/neon_survivor/effects.glb','effect'),
+    loadGLB('/assets/neon_survivor/map_props.glb','map_props'),
   ]);
 
   window._glbPlayerLoaded=!!R.meshes.player_ship;
@@ -3408,6 +3436,14 @@ async function loadModels(){
     sniper:'enemy_enemy_sniper',
     drone:'enemy_enemy_drone',
   };
+  // Extra enemy meshes from enemies_extra.glb (lowercased)
+  const enemyExtraMap={
+    healer:'enemy_extra_enemy_healer',
+    shielded:'enemy_extra_enemy_shielded',
+    swarm:'enemy_extra_enemy_swarm',
+    turret:'enemy_extra_enemy_turret',
+    eliteGrunt:'enemy_extra_enemy_elitegrunt',
+  };
   let swappedCount=0;
   Object.keys(enemyMeshMap).forEach(k=>{
     const meshKey=enemyMeshMap[k];
@@ -3418,13 +3454,27 @@ async function loadModels(){
       ETYPES[k].mesh='enemy';
     }
   });
+  // Extra enemy meshes
+  Object.keys(enemyExtraMap).forEach(k=>{
+    const meshKey=enemyExtraMap[k];
+    if(R.meshes[meshKey]&&ETYPES[k]){
+      ETYPES[k].mesh=meshKey;
+      swappedCount++;
+    }
+  });
   console.log('[GLB] Enemy per-type mesh swap: '+swappedCount+'/'+Object.keys(ETYPES).length+' types mapped');
 
   // Boss mesh swap
   if(R.meshes.boss){
-    BOSSES.forEach(b=>{b.mesh='boss';});
-    console.log('[GLB] Boss mesh swap active (merged)');
+    BOSSES.forEach((b,i)=>{b.mesh=i<2?'boss':'boss_extra';});
+    console.log('[GLB] Boss mesh swap active');
   }
+
+  // Effects meshes registered as globals
+  window._shieldMesh=R.meshes.effect_shield?'effect_shield':null;
+  window._explosionRing=R.meshes.effect_explosion_ring?['effect_explosion_ring','effect_explosion_core']:null;
+  window._portalMeshes=R.meshes.effect_portal_ring?['effect_portal_ring','effect_portal_disc']:null;
+  window._pickupSparkle=R.meshes.effect_pickupsparkle?'effect_pickupsparkle':null;
 
   console.log('[GLB] All meshes:',Object.keys(R.meshes));
 }
@@ -3452,12 +3502,15 @@ window.loadMapEnv=async function(mapId){
 function scatterEnvProps(mapId){
   window._envProps=[];
   const pfx='map_'+mapId+'_';
-  const keys=Object.keys(R.meshes).filter(k=>k.startsWith(pfx));
-  if(!keys.length)return;
-  const count=35+Math.floor(Math.random()*20);
+  let keys=Object.keys(R.meshes).filter(k=>k.startsWith(pfx));
+  // Also scatter extra environment and map_props meshes
+  const extraKeys=Object.keys(R.meshes).filter(k=>k.startsWith('env_extra_')||k.startsWith('map_props_'));
+  const allKeys=keys.concat(extraKeys);
+  if(!allKeys.length)return;
+  const count=40+Math.floor(Math.random()*25);
   const arenaR=2800;
   for(let i=0;i<count;i++){
-    const k=keys[Math.floor(Math.random()*keys.length)];
+    const k=allKeys[Math.floor(Math.random()*allKeys.length)];
     const angle=Math.random()*Math.PI*2;
     const dist=600+Math.random()*arenaR;
     const x=Math.cos(angle)*dist;
