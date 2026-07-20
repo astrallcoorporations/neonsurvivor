@@ -3079,11 +3079,6 @@ function startEngine(){
   };
   requestAnimationFrame(frame);
 }
-window.onGraphicsReady=function(){
-  if(window.T&&T.ready){const gc=document.getElementById('glcanvas');
-    if(T.setDistrict&&window.World)T.setDistrict(World.district||0);}
-};
-
 /* ============================================================================
    200-ITEM COLLECTION SYSTEM  (stacking passives + procs, drops, inventory,
    localStorage discovery). Additive: hooks via function wrapping.
@@ -3284,7 +3279,7 @@ if(typeof killEnemy==='function'){const _ke=killEnemy;killEnemy=function(e){cons
 if(typeof damageEnemy==='function'){const _de=damageEnemy;damageEnemy=function(e,a,c,kx,kz,kn){_de(e,a,c,kx,kz,kn);if(P.procs&&P.procs.chainHit>0)try{itemOnHit(e);}catch(_){}}; }
 if(typeof update==='function'){const _up=update;update=function(dt){_up(dt);try{updateItemPickups(dt);if(P.muzzleT>0)P.muzzleT-=dt;if(!P.downed&&(P.mvx||P.mvz)&&(G.frame&1)===0){spawnParticle(P.x-(P.mvx||0)*22,P.z-(P.mvz||0)*22,16,-(P.mvx||0)*70+rand(-25,25),rand(15,55),-(P.mvz||0)*70+rand(-25,25),0.4,7,0.3,0.85,1,'diamond');}}catch(_){}};}
 if(typeof drawFX==='function'){const _dfx=drawFX;drawFX=function(){_dfx();try{drawItems2D();}catch(_){}};}
-if(typeof draw==='function'){const _dr=draw;draw=function(){_dr();try{if(window.T&&T.hideGun)T.hideGun();}catch(_){}};}
+if(typeof draw==='function'){const _dr=draw;draw=function(){_dr();};}
 addEventListener('keydown',e=>{if(e.key.toLowerCase()==='i'&&G.running)toggleInventory();});
 
 /* Expose strict-mode lexical globals to window so the bootstrap bridge can read them */

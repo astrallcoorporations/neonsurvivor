@@ -216,15 +216,17 @@ const Meta={
     if(total>0){this.addCredits(total);this.save();}
     return total;
   },
-  canAscend(){return this.data.bestLevel>=40 && this.data.ascension<5;},
+  canAscend(){return (this.data.stats.bestLevel||0)>=40 && this.data.ascension<5;},
   doAscend(){
     if(!this.canAscend())return false;
     this.data.ascension++;this.data.credits+=500;
     this.save();return true;
   },
-  canPrestige(){return this.data.totalRuns>=5 && this.data.prestige<10;}
-  ,doPrestige(){
+  canPrestige(){return this.data.prestige<10;}
+  ,doPrestige(runInfo){
     if(!this.canPrestige())return false;
+    const gt=runInfo?.gameTime||0,lv=runInfo?.level||0;
+    if(gt<300&&lv<20)return false;
     this.data.prestige++;this.data.credits+=200;
     // reset run-progression but keep prestige/ascension
     this.data.shopOwned=[];this.data.weaponMastery={};this.data.minimapLevel=0;
@@ -463,4 +465,7 @@ window.addEventListener('keydown',e=>{
   }
 });
 
+/* modelManager stub for boss model key mapping */
+window.modelManager={bossKeyForIndex:function(idx){return idx<2?'boss':'boss_extra';}};
+window.onGraphicsReady=function(){if(window.T&&T.ready&&window.World)T.setDistrict(World.district||0);};
 })();
