@@ -382,6 +382,10 @@ const Bridge={
         case 'setMap':
           Bridge.applyMap(msg.mapId);
           break;
+        case 'supabaseConfig':
+          if(msg.url)window.__SUPABASE_URL=msg.url;
+          if(msg.anonKey)window.__SUPABASE_ANON_KEY=msg.anonKey;
+          break;
         case 'netConnect':
           if(window.Net){
             const name=msg.name||'Player';

@@ -2153,8 +2153,8 @@ function paintCooldowns(){
 /* ======================= LOCAL CO-OP (Player 2) ======================= */
 
 /* ======================= ONLINE MULTIPLAYER (Supabase Realtime) ======================= */
-const SUPABASE_URL='https://auimjkjgzscplvvpunxb.supabase.co';
-const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF1aW1qa2pnenNjcGx2dnB1bnhiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2MjY1NTAsImV4cCI6MjEwMDIwMjU1MH0.iJ6C8QGlViDHpbU2RR9G9KMdtzMiPf6iq_LcG9B6GOI';
+const SUPABASE_URL=window.__SUPABASE_URL||'https://auimjkjgzscplvvpunxb.supabase.co';
+const SUPABASE_ANON_KEY=window.__SUPABASE_ANON_KEY||'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF1aW1qa2pnenNjcGx2dnB1bnhiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2MjY1NTAsImV4cCI6MjEwMDIwMjU1MH0.iJ6C8QGlViDHpbU2RR9G9KMdtzMiPf6iq_LcG9B6GOI';
 const Net={
   sb:null, channel:null, room:null, id:null, name:'', isHost:false, members:[], latency:50, connected:false,
   _inputCb:null, _remotePlayers:{}, _sawHost:false,

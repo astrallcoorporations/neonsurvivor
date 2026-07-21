@@ -50,9 +50,13 @@ export default function PlayScreen({ mode, netConfig, onExit }: Props) {
         setTimeout(() => {
           startGame(mode);
           setStarted(true);
-          // If multiplayer, tell iframe to connect to WebSocket after game loads
+          // If multiplayer, send supabase config then connect
           if (netConfig) {
             setTimeout(() => {
+              send('supabaseConfig', {
+                url: process.env.NEXT_PUBLIC_SUPABASE_URL,
+                anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+              });
               send('netConnect', { role: netConfig.role, name: netConfig.name, code: netConfig.code });
             }, 600);
           }
