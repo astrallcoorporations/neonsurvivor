@@ -174,17 +174,17 @@ export default function PlayScreen({ mode, netConfig, onExit }: Props) {
     }
   }, [started]);
 
-  // Pause shortcut (Esc)
+  // Pause shortcut (Esc) — show overlay with Resume / Return to Lobby
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && started && !isOver) {
         e.preventDefault();
-        setShowPause(s => { const next = !s; if (next) pause(); else resume(); return next; });
+        if (!showPause) { pause(); setShowPause(true); }
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [started, isOver, pause, resume]);
+  }, [started, isOver, showPause, pause]);
 
   const handleQuit = () => {
     quit();
@@ -249,7 +249,7 @@ export default function PlayScreen({ mode, netConfig, onExit }: Props) {
                 <button className="neon-btn w-full py-3" onClick={() => { resume(); setShowPause(false); }}>▶ RESUME</button>
                 <button className="neon-btn-ghost w-full py-2.5 text-sm" onClick={handleQuit}>◀ ABANDON RUN</button>
               </div>
-              <p className="font-mono-neon text-[10px] neon-text-faint mt-5 tracking-widest">ESC TO TOGGLE</p>
+              <p className="font-mono-neon text-[10px] neon-text-faint mt-5 tracking-widest">ESC TO PAUSE</p>
             </motion.div>
           </motion.div>
         )}
