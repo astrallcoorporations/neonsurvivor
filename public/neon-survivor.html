@@ -2269,11 +2269,6 @@ function resetGame(mode){
   levelQueue=0;R.setCam(P.x,P.z,0,0);
 }
 function startGame(mode){
-  if(window.R&&!R.modelsReady){
-    window.addEventListener('models-ready',function(){startGame(mode);},{once:true});
-    notify('LOADING MODELS...','var(--cyan)');
-    return;
-  }
   ['menu','gameover','pause','levelup','skilltree'].forEach(id=>document.getElementById(id).classList.remove('show'));
   Audio.init();Audio.resume();Audio.started=true;
   resetGame(mode);
