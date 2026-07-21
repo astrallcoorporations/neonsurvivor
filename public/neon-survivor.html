@@ -889,7 +889,7 @@ const Audio={
 const R={
   gl:null, W:0, H:0, dpr:1, bloom:true,
   progMesh:null, progGround:null, progBg:null, progBright:null, progBlur:null, progComp:null,
-  meshes:{}, view:M4.create(), proj:M4.create(), vp:M4.create(), invVP:M4.create(),
+  meshes:{}, meshExtents:{}, view:M4.create(), proj:M4.create(), vp:M4.create(), invVP:M4.create(),
   cam:{x:0,y:450,z:310,tx:0,tz:0},
   fbScene:null, fbBright:null, fbA:null, fbB:null, texScene:null, texBright:null, texA:null, texB:null, depthRB:null,
   buckets:{}, // mesh -> {arr,count}
@@ -943,7 +943,7 @@ const R={
     gl.bindVertexArray(null);
     return {vao,inst,count:idx.length,arr:new Float32Array(maxI*11),n:0,max:maxI,idxType:useU32?gl.UNSIGNED_INT:gl.UNSIGNED_SHORT};
   },
-  loadModel(key,verts,norms,idx,maxI){ if(!this.gl)return; try{ this.meshes[key]=this.makeMesh(verts,norms,idx,maxI||32);console.log('loadModel '+key+': '+idx.length+' indices, max='+this.meshes[key].max); }catch(e){ console.error('loadModel '+key,e);if(window.showErrBanner)window.showErrBanner('loadModel '+key+': '+(e?.message||e)); } },
+  loadModel(key,verts,norms,idx,maxI,extents){ if(!this.gl)return; try{ this.meshes[key]=this.makeMesh(verts,norms,idx,maxI||32);if(extents)this.meshExtents[key]=extents;console.log('loadModel '+key+': '+idx.length+' indices, max='+this.meshes[key].max); }catch(e){ console.error('loadModel '+key,e);if(window.showErrBanner)window.showErrBanner('loadModel '+key+': '+(e?.message||e)); } },
   buildMeshes(){
     // cube
     const cv=[],cn=[],ci=[];
@@ -1078,11 +1078,12 @@ const R={
     gl.uniformMatrix4fv(this.progMesh.u.uProj,false,this.proj);
     gl.uniform3f(this.progMesh.u.uLight,0.4,1.0,0.5);
     gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
+    gl.enable(gl.CULL_FACE);gl.cullFace(gl.BACK);
     for(const k in this.meshes){const m=this.meshes[k];if(!m.n)continue;
       gl.bindVertexArray(m.vao);gl.bindBuffer(gl.ARRAY_BUFFER,m.inst);
       gl.bufferSubData(gl.ARRAY_BUFFER,0,m.arr.subarray(0,m.n*11));
       gl.drawElementsInstanced(gl.TRIANGLES,m.count,m.idxType||gl.UNSIGNED_SHORT,0,m.n);}
-    gl.bindVertexArray(null);gl.disable(gl.BLEND);gl.disable(gl.DEPTH_TEST);gl.depthMask(false);
+    gl.bindVertexArray(null);gl.disable(gl.CULL_FACE);gl.disable(gl.BLEND);gl.disable(gl.DEPTH_TEST);gl.depthMask(false);
     if(this.bloom)this.postBloom();
   },
   drawGround(){
@@ -2819,10 +2820,11 @@ function draw(){
 function drawR(shx,shz){
   R.setCam(P.x,P.z,shx,shz);R.begin();
   const pulse=0.5+Math.sin(G.t*0.006)*0.2+(P.invuln>0?0.5:0);
+  function mscale(key,s){const e=R.meshExtents[key];return e?[s/e[0],s/e[1],s/e[2]]:[s,s,s];}
   // glb player ship
-  R.push(R.meshes.player_ship?'player_ship':'sphere',P.x,P.y,P.z,P.radius*2.2,P.radius*2.2,P.radius*2.2,P.downed?0.6:1,P.downed?0.2:1,P.downed?0.3:1,pulse,R.meshes.player_ship?P.angle:0);
+  {const k=R.meshes.player_ship?'player_ship':'sphere';const sc=mscale(k,P.radius*2.2);R.push(k,P.x,P.y,P.z,sc[0],sc[1],sc[2],P.downed?0.6:1,P.downed?0.2:1,P.downed?0.3:1,pulse,R.meshes.player_ship?P.angle:0);}
   const w=curWeapon();R.push(R.meshes.weapon_mdl?'weapon_mdl':'cube',P.x+P.aimX*34,26,P.z+P.aimZ*34,64,14,14,w.col[0],w.col[1],w.col[2],1.1,P.angle);
-  if(Coop.active&&!P2.downed)R.push(R.meshes.player_ship?'player_ship':'sphere',P2.x,P2.y,P2.z,P2.radius*2.1,P2.radius*2.1,P2.radius*2.1,0.3,1,0.5,0.7,0);
+  if(Coop.active&&!P2.downed){const k=R.meshes.player_ship?'player_ship':'sphere';const sc=mscale(k,P2.radius*2.1);R.push(k,P2.x,P2.y,P2.z,sc[0],sc[1],sc[2],0.3,1,0.5,0.7,0);}
   drawRemotePlayers();
   // Buildings from World
   if(window.World&&World.buildings){
@@ -2834,11 +2836,9 @@ function drawR(shx,shz){
   for(let i=0;i<enemies.length;i++){const e=enemies[i];let s=e.radius*1.9;
     let em=e.flash>0?2.8:(e.boss?1.0+Math.sin(G.t*0.01)*0.3:0.85);if(e.boss)s*=1+Math.sin(G.t*0.005)*0.04;if(e.elite&&!e.boss)em+=0.4;
     const eKey=R.meshes[e.model]?e.model:e.mesh;
-    // The constant fast spin reads as a stylized "energy" flourish on abstract
-    // primitives, but on a real asymmetric model it just looks like broken,
-    // glitchy motion — only spin the primitive fallback shapes.
-    R.push(eKey,e.x,e.y,e.z,s,s,s,e.cr,e.cg,e.cb,em,eKey===e.model?0:e.spin);}
-  for(let i=0;i<drones.length;i++){const dr=drones[i];const c=dr.def.col;R.push(R.meshes.enemy_drone?'enemy_drone':(dr.def.mesh||'cube'),dr.x,dr.y||40,dr.z,26,26,26,c[0],c[1],c[2],1,dr.ang||0);}
+    const sc=mscale(eKey,s);
+    R.push(eKey,e.x,e.y,e.z,sc[0],sc[1],sc[2],e.cr,e.cg,e.cb,em,eKey===e.model?0:e.spin);}
+  for(let i=0;i<drones.length;i++){const dr=drones[i];const c=dr.def.col;const dk=R.meshes.enemy_drone?'enemy_drone':(dr.def.mesh||'cube');const sc=mscale(dk,26);R.push(dk,dr.x,dr.y||40,dr.z,sc[0],sc[1],sc[2],c[0],c[1],c[2],1,dr.ang||0);}
   for(let i=0;i<loots.length;i++){const l=loots[i];const c=hex3(RAR[l.rar].c);
     R.push('diamond',l.x,l.y||20,l.z,30,30,30,c[0],c[1],c[2],1.4,l.t||0);}
   for(let i=0;i<bullets.length;i++){const b=bullets[i];const z=(b.size||10);R.push('cube',b.x,24,b.z,z*2.6,z*0.9,z*1.0,b.r,b.g,b.b,1.2,-(b.ang||0));}
@@ -2954,7 +2954,8 @@ function drawRemotePlayers(){
   const rp=Net.getRemotePlayers();
   for(const [pid,p] of Object.entries(rp)){
     const meshKey=R.meshes.player_ship?'player_ship':'sphere';
-    R.push(meshKey,p.x,26,p.z,p.radius*2.1,p.radius*2.1,p.radius*2.1,0.3,1,0.5,0.7,p.angle||0);
+    const e=R.meshExtents[meshKey];const s=p.radius*2.1;
+    R.push(meshKey,p.x,26,p.z,e?s/e[0]:s,e?s/e[1]:s,e?s/e[2]:s,0.3,1,0.5,0.7,p.angle||0);
   }
 }
 function wireUI(){
@@ -3343,9 +3344,10 @@ function extractMerged(scene,re){
   if(!V.length){const names=[];scene.traverse(o=>{if(o.isMesh&&o.name)names.push(o.name);});console.warn('extractMerged: no meshes matched regex. Available mesh names:',names.join(', '));return null;}
   let mnx=1e9,mny=1e9,mnz=1e9,mxx=-1e9,mxy=-1e9,mxz=-1e9;
   for(let i=0;i<V.length;i+=3){if(V[i]<mnx)mnx=V[i];if(V[i]>mxx)mxx=V[i];if(V[i+1]<mny)mny=V[i+1];if(V[i+1]>mxy)mxy=V[i+1];if(V[i+2]<mnz)mnz=V[i+2];if(V[i+2]>mxz)mxz=V[i+2];}
-  const cx=(mnx+mxx)/2,cy=(mny+mxy)/2,cz=(mnz+mxz)/2,ext=Math.max(mxx-mnx,mxy-mny,mxz-mnz)||1,sc=1/ext;
-  for(let i=0;i<V.length;i+=3){V[i]=(V[i]-cx)*sc;V[i+1]=(V[i+1]-cy)*sc;V[i+2]=(V[i+2]-cz)*sc;}
-  return {verts:V,norms:N,idx:I};
+  const cx=(mnx+mxx)/2,cy=(mny+mxy)/2,cz=(mnz+mxz)/2;
+  const ex=mxx-mnx,ey=mxy-mny,ez=mxz-mnz;
+  for(let i=0;i<V.length;i+=3){V[i]-=cx;V[i+1]-=cy;V[i+2]-=cz;}
+  return {verts:V,norms:N,idx:I,extents:[ex||1,ey||1,ez||1]};
 }
 
 const LOAD_RETRIES=2;
@@ -3378,7 +3380,7 @@ async function loadGLBModelsThree(){
     for(const[key,re,cap]of job.items){
       try{
         const m=extractMerged(gltf.scene,re);
-        if(m){R.loadModel(key,m.verts,m.norms,m.idx,cap);extracted++;}
+        if(m){R.loadModel(key,m.verts,m.norms,m.idx,cap,m.extents);extracted++;}
         else console.warn('glb extract '+key+': no meshes matched /'+re.source+'/ in '+job.file+'.glb');
       }catch(e){
         console.error('glb extract '+key,e);
