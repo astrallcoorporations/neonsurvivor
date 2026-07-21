@@ -943,7 +943,7 @@ const R={
     gl.bindVertexArray(null);
     return {vao,inst,count:idx.length,arr:new Float32Array(maxI*11),n:0,max:maxI,idxType:useU32?gl.UNSIGNED_INT:gl.UNSIGNED_SHORT};
   },
-  loadModel(key,verts,norms,idx,maxI){ if(!this.gl)return; try{ this.meshes[key]=this.makeMesh(verts,norms,idx,maxI||32); }catch(e){ console.error('loadModel '+key,e); } },
+  loadModel(key,verts,norms,idx,maxI){ if(!this.gl)return; try{ this.meshes[key]=this.makeMesh(verts,norms,idx,maxI||32);console.log('loadModel '+key+': '+idx.length+' indices, max='+this.meshes[key].max); }catch(e){ console.error('loadModel '+key,e);if(window.showErrBanner)window.showErrBanner('loadModel '+key+': '+(e?.message||e)); } },
   buildMeshes(){
     // cube
     const cv=[],cn=[],ci=[];
@@ -2287,6 +2287,11 @@ function resetGame(mode){
   levelQueue=0;R.setCam(P.x,P.z,0,0);
 }
 function startGame(mode){
+  if(window.R&&!R.modelsReady){
+    window.addEventListener('models-ready',function(){startGame(mode);},{once:true});
+    notify('LOADING MODELS...','var(--cyan)');
+    return;
+  }
   ['menu','gameover','pause','levelup','skilltree'].forEach(id=>document.getElementById(id).classList.remove('show'));
   Audio.init();Audio.resume();Audio.started=true;
   resetGame(mode);
@@ -3335,7 +3340,7 @@ function extractMerged(scene,re){
     else{for(let i=0;i<nv;i++)I.push(base+i);}
     base+=nv;
   });
-  if(!V.length)return null;
+  if(!V.length){const names=[];scene.traverse(o=>{if(o.isMesh&&o.name)names.push(o.name);});console.warn('extractMerged: no meshes matched regex. Available mesh names:',names.join(', '));return null;}
   let mnx=1e9,mny=1e9,mnz=1e9,mxx=-1e9,mxy=-1e9,mxz=-1e9;
   for(let i=0;i<V.length;i+=3){if(V[i]<mnx)mnx=V[i];if(V[i]>mxx)mxx=V[i];if(V[i+1]<mny)mny=V[i+1];if(V[i+1]>mxy)mxy=V[i+1];if(V[i+2]<mnz)mnz=V[i+2];if(V[i+2]>mxz)mxz=V[i+2];}
   const cx=(mnx+mxx)/2,cy=(mny+mxy)/2,cz=(mnz+mxz)/2,ext=Math.max(mxx-mnx,mxy-mny,mxz-mnz)||1,sc=1/ext;
@@ -3343,21 +3348,49 @@ function extractMerged(scene,re){
   return {verts:V,norms:N,idx:I};
 }
 
+const LOAD_RETRIES=2;
+async function loadGLBWithRetry(loader,file){
+  for(let attempt=0;attempt<=LOAD_RETRIES;attempt++){
+    try{return await loader.loadAsync('assets/neon_survivor/'+file+'.glb');}
+    catch(e){
+      console.warn('glb load '+file+' attempt '+(attempt+1)+' failed:',e);
+      if(attempt<LOAD_RETRIES)await new Promise(r=>setTimeout(r,300*(attempt+1)));
+    }
+  }
+  throw new Error('glb load '+file+' failed after '+(LOAD_RETRIES+1)+' attempts');
+}
 async function loadGLBModelsThree(){
   const R=window.R;
   if(!R||!R.gl){console.warn('R not ready — skipping GLB load');return;}
   const loader=new GLTFLoader();
-  for(const job of GLB_JOBS){
-    try{
-      const gltf=await loader.loadAsync('assets/neon_survivor/'+job.file+'.glb');
-      for(const [key,re,cap] of job.items){
-        try{
-          const m=extractMerged(gltf.scene,re);
-          if(m)R.loadModel(key,m.verts,m.norms,m.idx,cap);
-        }catch(e){console.error('glb extract '+key,e);if(window.showErrBanner)window.showErrBanner('glb '+key+': '+(e&&e.message||e));}
+  const loadStart=performance.now();
+  const results=await Promise.allSettled(
+    GLB_JOBS.map(job=>loadGLBWithRetry(loader,job.file).then(gltf=>({job,gltf})))
+  );
+  let loaded=0,failed=0,extracted=0;
+  for(const result of results){
+    if(result.status==='rejected'){
+      failed++;console.error('glb load failed:',result.reason);
+      if(window.showErrBanner)window.showErrBanner('glb: '+(result.reason?.message||result.reason));
+      continue;
+    }
+    loaded++;const{job,gltf}=result.value;
+    for(const[key,re,cap]of job.items){
+      try{
+        const m=extractMerged(gltf.scene,re);
+        if(m){R.loadModel(key,m.verts,m.norms,m.idx,cap);extracted++;}
+        else console.warn('glb extract '+key+': no meshes matched /'+re.source+'/ in '+job.file+'.glb');
+      }catch(e){
+        console.error('glb extract '+key,e);
+        if(window.showErrBanner)window.showErrBanner('glb '+key+': '+(e?.message||e));
       }
-    }catch(e){console.error('glb load '+job.file,e);if(window.showErrBanner)window.showErrBanner('glb load '+job.file+': '+(e&&e.message||e));}
+    }
   }
+  const ms=Math.round(performance.now()-loadStart);
+  console.log('GLB models loaded: '+loaded+'/'+GLB_JOBS.length+' files, '+extracted+' meshes ('+ms+'ms'+(failed?', '+failed+' failed':'')+')');
+  R.modelsReady=true;
+  if(typeof window.onGraphicsReady==='function')window.onGraphicsReady();
+  window.dispatchEvent(new Event('models-ready'));
 }
 loadGLBModelsThree();
 </script>
