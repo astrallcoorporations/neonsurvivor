@@ -450,7 +450,6 @@ const Bridge={
       const b=parseInt(gc.slice(5,7),16)/255;
       R.gl.clearColor(r,g,b,0);
     }
-    if(window.loadMapEnv)loadMapEnv(mapId);
   }
 };
 window.NeonBridge=Bridge;
@@ -467,5 +466,5 @@ window.addEventListener('keydown',e=>{
 
 /* modelManager stub for boss model key mapping */
 window.modelManager={bossKeyForIndex:function(idx){return idx<2?'boss':'boss_extra';}};
-window.onGraphicsReady=function(){if(window.T&&T.ready&&window.World)T.setDistrict(World.district||0);};
+window.onGraphicsReady=function(){};
 })();

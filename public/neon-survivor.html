@@ -15,10 +15,9 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:#dfe9ff;
   font-family:"Segoe UI",Roboto,Helvetica,Arial,system-ui,monospace;user-select:none;touch-action:none}
-#glcanvas,#threecanvas,#fx{position:fixed;inset:0;width:100%;height:100%;display:block}
+#glcanvas,#fx{position:fixed;inset:0;width:100%;height:100%;display:block}
 #fx{pointer-events:none;z-index:2}
 #glcanvas{z-index:2;pointer-events:none}
-#threecanvas{z-index:1;pointer-events:none;background:#05030d}
 #hud{position:fixed;inset:0;z-index:3;pointer-events:none}
 .glow{text-shadow:0 0 6px currentColor,0 0 14px currentColor}
 .bar{height:14px;border:1px solid rgba(255,255,255,.25);border-radius:8px;overflow:hidden;background:rgba(0,0,0,.45);position:relative}
@@ -396,19 +395,18 @@ body.embedded #pause,
 body.embedded #gameover{display:none !important}
 
 </style>
-<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
+
 </head>
 <body>
 <div id="scanlines"></div>
 <div id="pixelgrid"></div>
 <canvas id="glcanvas"></canvas>
-<canvas id="threecanvas"></canvas>
 <canvas id="fx"></canvas>
 
 <div id="hud">
   <div id="tl">
     <div class="bar" id="hpbar"><span></span><b id="hptxt">100/100</b></div>
-    <button id="debBtn" style="margin-left:6px;background:rgba(34,230,255,0.15);border:1px solid rgba(34,230,255,0.3);border-radius:4px;color:#22e6ff;font:11px monospace;padding:2px 8px;cursor:pointer;pointer-events:auto" onclick="var p=document.getElementById('deblog');if(p)p.style.display=p.style.display==='none'?'block':'none'">D</button>
+    <button id="debBtn" style="margin-left:6px;background:rgba(34,230,255,0.15);border:1px solid rgba(34,230,255,0.3);border-radius:4px;color:#22e6ff;font:11px monospace;padding:2px 8px;cursor:pointer;pointer-events:auto" onclick="window.toggleDebug()">D</button>
     <div class="bar" id="xpbar"><span></span></div>
     <div id="statline">
       <div class="lv">LV <span id="lvl">1</span></div>
@@ -473,7 +471,7 @@ body.embedded #gameover{display:none !important}
     <div class="row" style="margin-top:14px"><button class="btn" style="width:auto;padding:10px 26px" id="howBtn">HOW TO PLAY</button></div>
   </div>
   <!-- Debug Log Panel - big, covers right half of screen -->
-  <div id="deblog" style="position:fixed;right:0;top:0;width:50%;height:100%;z-index:999;overflow-y:auto;background:rgba(0,0,0,0.92);border-left:2px solid #22e6ff;padding:10px 14px;font:12px monospace;color:#b8c4d8;pointer-events:auto">
+  <div id="deblog" style="display:none;position:fixed;right:0;top:0;width:50%;height:100%;z-index:999;overflow-y:auto;background:rgba(0,0,0,0.92);border-left:2px solid #22e6ff;padding:10px 14px;font:12px monospace;color:#b8c4d8;pointer-events:auto">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid rgba(34,230,255,0.2)">
       <span style="color:#22e6ff;font-weight:bold;font-size:14px;letter-spacing:2px">■ DEBUG LOG</span>
       <span id="deblogCount" style="color:rgba(255,255,255,0.3);font-size:10px">0 entries</span>
@@ -624,6 +622,12 @@ window.log=function(msg,type){
 };
 function log(msg,type){window.log(msg,type);}
 window._debLog=0;
+window._debugVisible=false;
+window.toggleDebug=function(){
+  window._debugVisible=!window._debugVisible;
+  const p=document.getElementById('deblog');
+  if(p)p.style.display=window._debugVisible?'block':'none';
+};
 log('Debug logger ready — press L to toggle','info');
 
 // master game object
@@ -1235,7 +1239,7 @@ const FX={
   resize(){this.c.width=innerWidth;this.c.height=innerHeight;this.W=innerWidth;this.H=innerHeight;},
   // world->screen using renderer vp
   project(wx,wz){
-    const vp=(window.T&&T.ready)?T.vp:R.vp;
+    const vp=R.vp;
     const x=wx,y=0,z=wz;
     const cx=vp[0]*x+vp[4]*y+vp[8]*z+vp[12];
     const cy=vp[1]*x+vp[5]*y+vp[9]*z+vp[13];
@@ -2210,7 +2214,7 @@ function setupInput(){
   addEventListener('mousedown',e=>{if(e.button===0){Input.mdown=true;Audio.resume();}});
   addEventListener('mouseup',e=>{if(e.button===0)Input.mdown=false;});
   addEventListener('contextmenu',e=>e.preventDefault());
-  addEventListener('resize',()=>{R.resize();FX.resize();if(window.T&&T.resize)T.resize();});
+  addEventListener('resize',()=>{R.resize();FX.resize();});
   // mobile
   if('ontouchstart' in window||navigator.maxTouchPoints>0){setupTouch();}
 }
@@ -2274,7 +2278,7 @@ function resetGame(mode){
       if(m.oneGun)P.unlocked=[P.unlocked[0]];}}
   P.hp=Math.min(P.hp,P.maxhp);
   if(window.World)World.reset();
-  if(window.loadMapEnv&&G.mapId)loadMapEnv(G.mapId);
+
   // reset tree ownership
   TREE.forEach(n=>n.owned=(n.id==='root'));
   for(const k in ACH_DONE)delete ACH_DONE[k];
@@ -2653,8 +2657,7 @@ function update(rdt){
   // L key toggle debug panel (edge-triggered)
   if(Input.keys['l']&&!window._lWas){
     window._lWas=true;
-    const p=document.getElementById('deblog');
-    if(p)p.style.display=p.style.display==='none'?'block':'none';
+    window.toggleDebug();
   }
   if(!Input.keys['l'])window._lWas=false;
   if(G.slowT>0){G.slowT-=rdt;if(G.slowT<=0)G.globalSlow=1;else G.globalSlow=lerp(G.globalSlow,1,rdt*1.5);}
@@ -2768,7 +2771,7 @@ function update(rdt){
   P.x+=P.vx*sdt;P.z+=P.vz*sdt;P.x=clamp(P.x,-HALF+30,HALF-30);P.z=clamp(P.z,-HALF+30,HALF-30);
   let ax,az;
   if(document.body.classList.contains('mobile')){const t=Grid.nearest(P.x,P.z,1400);if(t){ax=t.x-P.x;az=t.z-P.z;}else{ax=P.mvx||1;az=P.mvz||0;}}
-  else{const g=(window.T&&T.ready&&T.screenToGround)?T.screenToGround(Input.mx,Input.my):R.screenToGround(Input.mx,Input.my);ax=g[0]-P.x;az=g[1]-P.z;}
+  else{const g=R.screenToGround(Input.mx,Input.my);ax=g[0]-P.x;az=g[1]-P.z;}
   const al=Math.hypot(ax,az)||1;P.aimX=ax/al;P.aimZ=az/al;P.angle=Math.atan2(P.aimZ,P.aimX);
   if(Input.mdown||Input.touchFire)P.overdrive=0.12+(P.odBonus||0);else if(P.overdrive>0)P.overdrive-=rdt;
   let regen=P.regen+((window.World&&World.weather&&World.weather.regen)?World.weather.regen:0);
@@ -2809,99 +2812,31 @@ function update(rdt){
 /* ======================= DRAW (3D) ======================= */
 function draw(){
   const sh=G.noShake?0:G.shake,shx=G.noShake?0:rand(-sh,sh),shz=G.noShake?0:rand(-sh,sh);
-  const useT=!!(window.T&&T.ready)&&!R.meshes.player_ship;
-  const gc=document.getElementById('glcanvas'),tc=document.getElementById('threecanvas');
-  if(gc)gc.style.display=useT?'none':'block';
-  if(tc)tc.style.display=useT?'block':'none';
-  if(useT){
-    T.setCam(P.x,P.z,shx,shz);T.begin();
-    // sleek dark neon towers (skyline)
-    if(window.World&&World.buildings){const bs=World.buildings;for(let i=0;i<bs.length;i++){const b=bs[i];
-      if(Math.abs(b.x-P.x)>5200||Math.abs(b.z-P.z)>5200)continue;const h=220*b.scale;
-      T.pushNeon('tower',b.x,h*0.5,b.z,55*b.scale,h,55*b.scale,0.06,0.13,0.42,b.rot);}}
-    // player core
-    {const wc=(WEAPONS[P.weapon]||{col:[0.3,0.95,1]}).col,pax=Math.cos(P.angle),paz=Math.sin(P.angle),R=P.radius;
-     const rk=(P.muzzleT||0)/0.07*12+(P.weaponKick||0);   // recoil kick-back
-     T.pushNeon('octa',P.x,33,P.z,R*1.55,R*2.0,R*1.55,0.30,0.9,1,G.t*0.0025);          // hull
-     T.pushNeon('ico',P.x,37,P.z,R*0.9,R*0.9,R*0.9,1,1,1,-G.t*0.004);                    // core
-     T.pushNeon('box',P.x+pax*(46-rk),30,P.z+paz*(46-rk),92,16,18,wc[0],wc[1],wc[2],-P.angle);     // barrel
-     T.pushNeon('box',P.x+pax*(22-rk),38,P.z+paz*(22-rk),30,10,26,wc[0]*0.7+0.2,wc[1]*0.7+0.2,wc[2]*0.7+0.2,-P.angle); // receiver
-     T.pushNeon('octa',P.x+pax*(90-rk),30,P.z+paz*(90-rk),22,22,22,1,1,1,G.t*0.03);      // muzzle
-     if(P.muzzleT>0){const mf=P.muzzleT/0.07;T.pushNeon('ico',P.x+pax*98,30,P.z+paz*98,28*mf+9,28*mf+9,28*mf+9,1,1,0.75,G.t*0.06);}}
-    if(Coop.active&&!P2.downed){const a2=Math.cos(P2.angle),z2=Math.sin(P2.angle);
-     T.pushNeon('octa',P2.x,33,P2.z,P2.radius*1.5,P2.radius*1.9,P2.radius*1.5,0.3,1,0.5,G.t*0.003);
-     T.pushNeon('box',P2.x+a2*44,30,P2.z+z2*44,84,14,16,0.4,1,0.6,-P2.angle);}
-    // enemies as glowing neon shapes (shape by type, color by faction)
-    for(let i=0;i<enemies.length;i++){const e=enemies[i];let cr=e.cr,cg=e.cg,cb=e.cb;if(e.flash>0){cr=1;cg=1;cb=1;}
-      if(e.boss){const br=e.radius;
-        T.pushNeon('box',e.x,br*1.0,e.z,br*2.0,br*2.0,br*2.0,cr*0.55,cg*0.55,cb*0.55,e.spin*0.4);
-        T.pushNeon('ico',e.x,br*1.35,e.z,br*1.7,br*1.7,br*1.7,cr,cg,cb,-e.spin);
-        T.pushNeon('octa',e.x,br*2.3,e.z,br*0.85,br*1.15,br*0.85,1,1,1,e.spin*2.2);
-        for(let k=0;k<6;k++){const a=e.spin*1.4+k/6*TWO_PI;T.pushNeon('octa',e.x+Math.cos(a)*br*1.75,br*1.0,e.z+Math.sin(a)*br*1.75,br*0.55,br*0.55,br*0.55,cr,cg,cb,a);}
-      } else {const s=e.radius*1.35;T.pushNeon(e.mesh,e.x,e.radius,e.z,s,s,s,cr,cg,cb,e.spin||0);}}
-    // drones
-    for(let i=0;i<drones.length;i++){const dr=drones[i];const c=dr.def.col;T.pushNeon('octa',dr.x,dr.y||40,dr.z,15,15,15,c[0],c[1],c[2],dr.ang||0);}
-    // loot gems
-    for(let i=0;i<loots.length;i++){const l=loots[i];const c=hex3(RAR[l.rar].c);T.pushNeon('octa',l.x,l.y||22,l.z,14,20,14,c[0],c[1],c[2],l.t||0);}
-    for(let i=0;i<bullets.length;i++){const b=bullets[i];const z=(b.size||10);T.pushNeon('box',b.x,24,b.z,z*2.6,z*0.9,z*1.0,b.r,b.g,b.b,-(b.ang||0));}
-    for(let i=0;i<ebullets.length;i++){const b=ebullets[i];const z=(b.size||10);T.pushNeon('octa',b.x,24,b.z,z*1.6,z*1.6,z*1.6,b.r,b.g,b.b,b.spin||0);}
-    T.render();
-  } else { drawR(shx,shz); }
+  drawR(shx,shz);
   drawFX();
   drawMinimap();
 }
 function drawR(shx,shz){
   R.setCam(P.x,P.z,shx,shz);R.begin();
   const pulse=0.5+Math.sin(G.t*0.006)*0.2+(P.invuln>0?0.5:0);
-  // test triangle — a bright cyan triangle floating at player position
-  if(!R.meshes._testTri){
-    const tv=[0,0,0, 30,0,0, 0,30,0], tn=[0,0,1, 0,0,1, 0,0,1], ti=[0,1,2];
-    R.meshes._testTri=R.makeMesh(tv,tn,ti);
-    log('Added test triangle mesh','info');
-  }
-  R.push('_testTri',P.x+60,P.y,P.z, 40,40,40, 0,1,1, 1.5, G.t*0.005);
   // glb player ship
   R.push(R.meshes.player_ship?'player_ship':'sphere',P.x,P.y,P.z,P.radius*2.2,P.radius*2.2,P.radius*2.2,P.downed?0.6:1,P.downed?0.2:1,P.downed?0.3:1,pulse,0);
   const w=curWeapon();R.push(R.meshes.weapon_mdl?'weapon_mdl':'cube',P.x+P.aimX*34,26,P.z+P.aimZ*34,64,14,14,w.col[0],w.col[1],w.col[2],1.1,P.angle);
   if(Coop.active&&!P2.downed)R.push(R.meshes.player_ship?'player_ship':'sphere',P2.x,P2.y,P2.z,P2.radius*2.1,P2.radius*2.1,P2.radius*2.1,0.3,1,0.5,0.7,0);
   drawRemotePlayers();
-  if(!window._df){window._df=0}window._df++;
-  if(window._df%60===0){
-    const pk=R.meshes.player_ship?'player_ship':'sphere';
-    log('Player mesh: '+pk+' | instances: '+(R.meshes[pk]?R.meshes[pk].n:0)+' | tris: '+(R.meshes[pk]?R.meshes[pk].count:0),'info');
-  }
-  if(window._envProps){
-    const viewR=1800;
-    for(let i=0;i<_envProps.length;i++){
-      const p=_envProps[i];
-      if(Math.abs(p.x-P.x)<viewR&&Math.abs(p.z-P.z)<viewR){
-        R.push(p.mesh,p.x,p.y,p.z,p.sx,p.sy,p.sz,p.r,p.g,p.b,p.em,p.rot);
-      }
-    }
-  }
-  // Buildings from World (use env_extra meshes if available)
+  // Buildings from World
   if(window.World&&World.buildings){
-    const bMesh=R.meshes.env_extra_env_billboard?'env_extra_env_billboard':(R.meshes.env_env_neonsign?'env_env_neonsign':'cube');
     const bs=World.buildings;
     for(let i=0;i<bs.length;i++){const b=bs[i];
       if(Math.abs(b.x-P.x)>5200||Math.abs(b.z-P.z)>5200)continue;const h=220*b.scale;
-      R.push(bMesh,b.x,h*0.5,b.z,55*b.scale,h,55*b.scale,0.06,0.13,0.42,b.rot);}
-  }
-  // Effects: shield bubbles on shielded enemies
-  if(window._shieldMesh){
-    for(let i=0;i<enemies.length;i++){const e=enemies[i];
-      const isShielded=e.mesh&&e.mesh.indexOf('shielded')>=0;
-      if(isShielded){
-        R.push(window._shieldMesh,e.x,e.y+5,e.z,e.radius*3,e.radius*3,e.radius*3,0.2,0.4,1,0.5,e.spin);
-      }
-    }
+      R.push('cube',b.x,h*0.5,b.z,55*b.scale,h,55*b.scale,0.06,0.13,0.42,b.rot);}
   }
   for(let i=0;i<enemies.length;i++){const e=enemies[i];let s=e.radius*1.9;
-    let em=e.flash>0?2.8:(e.boss?1.0+Math.sin(G.t*0.01)*0.3:0.5);if(e.boss)s*=1+Math.sin(G.t*0.005)*0.04;if(e.elite&&!e.boss)em+=0.4;
+    let em=e.flash>0?2.8:(e.boss?1.0+Math.sin(G.t*0.01)*0.3:0.85);if(e.boss)s*=1+Math.sin(G.t*0.005)*0.04;if(e.elite&&!e.boss)em+=0.4;
     R.push(e.mesh,e.x,e.y,e.z,s,s,s,e.cr,e.cg,e.cb,em,e.spin);}
   for(let i=0;i<drones.length;i++){const dr=drones[i];const c=dr.def.col;R.push(R.meshes.enemy_enemy_drone?'enemy_enemy_drone':(dr.def.mesh||'cube'),dr.x,dr.y||40,dr.z,26,26,26,c[0],c[1],c[2],1,dr.ang||0);}
   for(let i=0;i<loots.length;i++){const l=loots[i];const c=hex3(RAR[l.rar].c);
-    R.push(R.meshes.pickup_pickup_xp?'pickup_pickup_xp':'diamond',l.x,l.y||20,l.z,30,30,30,c[0],c[1],c[2],1.4,l.t||0);}
+    R.push('diamond',l.x,l.y||20,l.z,30,30,30,c[0],c[1],c[2],1.4,l.t||0);}
   for(let i=0;i<bullets.length;i++){const b=bullets[i];const z=(b.size||10);R.push('cube',b.x,24,b.z,z*2.6,z*0.9,z*1.0,b.r,b.g,b.b,1.2,-(b.ang||0));}
   for(let i=0;i<ebullets.length;i++){const b=ebullets[i];const z=(b.size||10);R.push('sphere',b.x,24,b.z,z*1.6,z*1.6,z*1.6,b.r,b.g,b.b,1.0,b.spin||0);}
   R.render();
@@ -2910,8 +2845,8 @@ function drawR(shx,shz){
 /* ======================= DRAW (2D FX OVERLAY) ======================= */
 function drawFX(){
   const ctx=FX.ctx;if(!ctx)return;ctx.clearRect(0,0,FX.W,FX.H);
-  // Debug log panel — right side of screen, always visible
-  if(window.__logEntries&&window.__logEntries.length){
+  // Debug log panel — right side of screen, toggled with L / D button
+  if(window._debugVisible&&window.__logEntries&&window.__logEntries.length){
     ctx.save();
     const bw=Math.min(580,FX.W*0.55), bx=FX.W-bw-8, by=8;
     ctx.fillStyle='rgba(0,0,0,0.85)';
@@ -2933,17 +2868,6 @@ function drawFX(){
       else ctx.fillStyle='#b8c4d8';
       ctx.fillText(e.length>80?e.slice(0,80)+'…':e, bx+12, y);
     }
-    ctx.restore();
-  }
-  // Mesh diagnostic bar (compact, top-left)
-  if(window.R&&R.meshes){
-    ctx.save();
-    ctx.textAlign='left';ctx.font='900 14px monospace';ctx.shadowBlur=0;
-    ctx.fillStyle='rgba(0,0,0,0.85)';ctx.fillRect(4,4,460,24);
-    ctx.fillStyle='#ff0';
-    const pKey=R.meshes.player_ship?'player_ship':'sphere';
-    const m=R.meshes.player_ship;
-    ctx.fillText('MESH: '+pKey+' N='+(m?m.n:0)+' TRI='+(m?m.count:0)+' TOTAL='+Object.keys(R.meshes).length, 10,20);
     ctx.restore();
   }
   // particles
@@ -3031,7 +2955,7 @@ function frame(ts){
     if(Net.isHost)Net.sendState();
     else updateRemotePlayers(dt);
   }
-  const fc=document.getElementById('fpsc');if(fc)fc.textContent=Math.round(1/dt)+' FPS · '+enemies.length+' enemies';
+  const fc=document.getElementById('fpsc');if(fc)fc.textContent=Math.round(1/dt)+' FPS · '+enemies.length+' '+(enemies.length===1?'enemy':'enemies');
 }
 function updateRemotePlayers(dt){
   const rp=Net.getRemotePlayers();
@@ -3376,302 +3300,7 @@ Object.assign(window,{
   Coop,P2,Input,Grid,R,FX,Audio,Net
 });
 
-/* =================== GLB MODEL LOADER =================== */
-/* Uses Three.js GLTFLoader (loaded via module script below) for
-   bulletproof GLB parsing. Falls back to hand-rolled parser if
-   Three.js CDN is unavailable. Extracts vertex/normal/index arrays
-   and feeds them into R.makeMesh() for instanced rendering. */
-async function parseGLB(buf){
-  // Try Three.js GLTFLoader (loaded by the module script below)
-  if (window.__gltfLoader) {
-    try {
-      const result = await new Promise((resolve, reject) => {
-        window.__gltfLoader.parse(buf, '', resolve, reject);
-      });
-      // Apply node transforms so sub-meshes are in world-space
-      result.scene.updateWorldMatrix(true, true);
-      const meshes = [];
-      // Also check a specific known mesh for its GLB internal data
-      const knownMeshes = ['player_ship','enemies','bosses'];
-      result.scene.traverse(child => {
-        if (child.isMesh && meshes.length < 3) {
-          const m = child.matrixWorld.elements;
-          log('Mesh "'+child.name+'" tx='+m[12].toFixed(2)+','+m[13].toFixed(2)+','+m[14].toFixed(2)+' scl='+m[0].toFixed(2)+','+m[5].toFixed(2)+','+m[10].toFixed(2),'info');
-        }
-      });
-      result.scene.traverse(child => {
-        if (child.isMesh) {
-          const geo = child.geometry;
-          if (!geo) return;
-          const posAttr = geo.getAttribute('position');
-          if (!posAttr) return;
-          // Read raw array (clone to avoid mutating THREE internal state)
-          const rawPos = posAttr.array;
-          const rawNorm = geo.getAttribute('normal');
-          // Get node world matrix (column-major 16 floats)
-          // Use raw local-space vertices (no node transform — instanced rendering
-          // adds the world position via the instance buffer, so vertex data must
-          // be local to the model origin)
-          const verts = new Float32Array(rawPos.length);
-          verts.set(rawPos);
-          let norms;
-          if (rawNorm) {
-            norms = new Float32Array(rawNorm.array.length);
-            norms.set(rawNorm.array);
-          } else {
-            norms = [];
-          }
-          // Still log the node matrix for reference
-          const m = child.matrixWorld.elements;
-          log('Raw local mesh "'+child.name+'" verts='+(rawPos.length/3)+' idx='+(geo.index?geo.index.array.length:0),'info');
-          const idx = geo.index;
-          const indices = idx ? Array.from(idx.array) : [...Array(posAttr.count).keys()];
-          let name = (child.name || 'mesh').toLowerCase().replace(/[^a-z0-9_]/g, '_');
-          if (!name) name = 'mesh';
-          meshes.push({ name, verts: Array.from(verts), norms: Array.from(norms), idx: indices });
-        }
-      });
-      return meshes;
-        } catch(e) {
-          log('Three.js parse failed: '+e.message+' — falling back to manual parser','warn');
-        }
-  }
-  // ---- Fallback: hand-rolled GLB binary parser ----
-  const dv=new DataView(buf);
-  if(dv.getUint32(0,true)!==0x46546C67)return null;
-  const totalLen=dv.getUint32(8,true);
-  let jsonChunk=null, binChunk=null, off=12;
-  while(off<totalLen){
-    const cLen=dv.getUint32(off,true); off+=4;
-    const cType=dv.getUint32(off,true); off+=4;
-    if(cType===0x4E4F534A) jsonChunk=new TextDecoder().decode(new Uint8Array(buf,off,cLen));
-    else if(cType===0x004E4942) binChunk=new Uint8Array(buf,off,cLen);
-    off+=cLen;
-  }
-  if(!jsonChunk||!binChunk)return null;
-  const gltf=JSON.parse(jsonChunk);
-  const binStart=binChunk.byteOffset||0;
-  function readAcc(accIdx){
-    const acc=gltf.accessors[accIdx];
-    const view=gltf.bufferViews[acc.bufferView];
-    const types={SCALAR:1,VEC2:2,VEC3:3,VEC4:4};
-    const sizes={5120:1,5121:1,5122:2,5123:2,5124:4,5125:4,5126:4};
-    const nc=types[acc.type]||3, cs=sizes[acc.componentType]||4, es=cs*nc;
-    const st=view.byteStride||es;
-    const data=[];
-    for(let i=0;i<acc.count;i++){
-      const base=binStart+(view.byteOffset||0)+acc.byteOffset+i*st;
-      const row=[];
-      for(let j=0;j<nc;j++){
-        const p=base+j*cs;
-        if(acc.componentType===5126) row.push(dv.getFloat32(p,true));
-        else if(acc.componentType===5125) row.push(dv.getUint32(p,true));
-        else if(acc.componentType===5123) row.push(dv.getUint16(p,true));
-        else if(acc.componentType===5122) row.push(dv.getInt16(p,true));
-        else if(acc.componentType===5124) row.push(dv.getInt32(p,true));
-        else if(acc.componentType===5121) row.push(dv.getUint8(p));
-        else if(acc.componentType===5120) row.push(dv.getInt8(p));
-        else row.push(dv.getFloat32(p,true));
-      }
-      data.push(row);
-    }
-    return data;
-  }
-  const meshes=[];
-  (gltf.meshes||[]).forEach((mesh,mi)=>{
-    mesh.primitives.forEach((prim,pi)=>{
-      if(prim.attributes.POSITION==null)return;
-      const pos=readAcc(prim.attributes.POSITION);
-      const nor=prim.attributes.NORMAL?readAcc(prim.attributes.NORMAL):pos.map(()=>[0,1,0]);
-      const idx=prim.indices?readAcc(prim.indices):null;
-      const verts=[],norms=[],idxs=[];
-      pos.forEach(p=>{verts.push(p[0],p[1],p[2]);});
-      nor.forEach(n=>{norms.push(n[0],n[1],n[2]);});
-      if(idx) idx.forEach(i=>{idxs.push(i[0]);});
-      else pos.forEach((_,i)=>idxs.push(i));
-      let name=(mesh.name||('mesh'+mi)).toLowerCase().replace(/[^a-z0-9_]/g,'_');
-      if(mesh.primitives.length>1) name+='_prim'+pi;
-      meshes.push({name,verts,norms,idx:idxs});
-    });
-  });
-  return meshes;
-}
-
-/* fetch + register a GLB as named mesh types */
-async function loadGLB(url, prefix){
-  try{
-    const resp=await fetch(url);
-    if(!resp.ok){log('HTTP '+resp.status+' for '+url,'warn');return;}
-    const buf=await resp.arrayBuffer();
-    const meshes=await parseGLB(buf);
-    if(!meshes||!meshes.length){log('No meshes parsed from '+url,'warn');return;}
-    // Validate vertex data before makeMesh
-    meshes.forEach((m,mi)=>{
-      let vMin=Infinity,vMax=-Infinity, hasNan=false, hasInf=false;
-      for(let i=0;i<m.verts.length;i++){
-        const v=m.verts[i];
-        if(!isFinite(v)){hasNan=true;break;}
-        if(v<vMin)vMin=v;if(v>vMax)vMax=v;
-      }
-      let iMax=0;
-      for(let i=0;i<m.idx.length;i++){if(m.idx[i]>iMax)iMax=m.idx[i];}
-      const vCount=m.verts.length/3;
-      const oob=iMax>=vCount;
-      if(hasNan||oob)log(prefix+'_'+m.name+' BAD DATA nan='+hasNan+' oob='+oob+' iMax='+iMax+'/'+vCount+' vRange=['+vMin.toFixed(2)+','+vMax.toFixed(2)+']','error');
-      else if(mi<3)log(prefix+'_'+m.name+' OK verts='+m.verts.length+' idx='+m.idx.length+' vRange=['+vMin.toFixed(2)+','+vMax.toFixed(2)+']','info');
-    });
-    meshes.forEach(m=>{
-      const key=prefix+'_'+m.name;
-      try{ R.meshes[key]=R.makeMesh(m.verts,m.norms,m.idx); }
-      catch(e){log('makeMesh failed for '+key+': '+e.message,'error');}
-    });
-    if(meshes.length>1){
-      const allV=[],allN=[],allI=[];let voff=0;
-      meshes.forEach(m=>{
-        allV.push(...m.verts);allN.push(...m.norms);
-        m.idx.forEach(i=>allI.push(i+voff));
-        voff+=m.verts.length/3;
-      });
-      if(prefix==='player_ship'||prefix==='boss'){
-        log(prefix+': verts='+allV.length+' norms='+allN.length+' idx='+allI.length+(allV.length!==allN.length?' NORM_MISMATCH!':''),'info');
-        if(allV.length>8)log(prefix+' v='+allV.slice(0,3).map(v=>v.toFixed(2)).join()+' '+allV.slice(3,6).map(v=>v.toFixed(2)).join()+' '+allV.slice(6,9).map(v=>v.toFixed(2)).join(),'info');
-      }
-      try{ R.meshes[prefix]=R.makeMesh(allV,allN,allI); }
-      catch(e){log('merged makeMesh failed for '+prefix+': '+e.message,'error');}
-    } else if(meshes.length===1){
-      try{ R.meshes[prefix]=R.makeMesh(meshes[0].verts,meshes[0].norms,meshes[0].idx); }
-      catch(e){log('makeMesh failed for '+prefix+': '+e.message,'error');}
-    }
-    log('Registered '+prefix+': '+meshes.length+' mesh(es), keys: '+meshes.map(m=>prefix+'_'+m.name).join(', '),'info');
-  }catch(e){log('load failed for '+url+': '+e,'error');}
-}
-
-/* Load all models and swap entity meshes */
-async function loadModels(){
-  for(let i=0;i<100;i++){if(window.R&&R.meshes&&R.meshes.cube)break;await new Promise(r=>setTimeout(r,50));}
-
-  await Promise.all([
-    loadGLB('/assets/neon_survivor/player_ship.glb','player_ship'),
-    loadGLB('/assets/neon_survivor/enemies.glb','enemy'),
-    loadGLB('/assets/neon_survivor/bosses.glb','boss'),
-    loadGLB('/assets/neon_survivor/pickups.glb','pickup'),
-    loadGLB('/assets/neon_survivor/weapons.glb','weapon_mdl'),
-    loadGLB('/assets/neon_survivor/environment.glb','env'),
-    loadGLB('/assets/neon_survivor/player_variants.glb','player_variants'),
-    loadGLB('/assets/neon_survivor/enemies_extra.glb','enemy_extra'),
-    loadGLB('/assets/neon_survivor/bosses_extra.glb','boss_extra'),
-    loadGLB('/assets/neon_survivor/environment_extra.glb','env_extra'),
-    loadGLB('/assets/neon_survivor/effects.glb','effect'),
-    loadGLB('/assets/neon_survivor/map_props.glb','map_props'),
-  ]);
-
-  window._glbPlayerLoaded=!!R.meshes.player_ship;
-  window._glbEnemyLoaded=!!R.meshes.enemy;
-  window._glbBossLoaded=!!R.meshes.boss;
-
-  // Per-type enemy mesh swap — each enemy type gets its own GLB model
-  const enemyMeshMap={
-    grunt:'enemy_enemy_grunt',
-    fast:'enemy_enemy_fast',
-    tank:'enemy_enemy_tank',
-    exploder:'enemy_enemy_exploder',
-    shooter:'enemy_enemy_shooter',
-    sniper:'enemy_enemy_sniper',
-    drone:'enemy_enemy_drone',
-  };
-  // Extra enemy meshes from enemies_extra.glb (lowercased)
-  const enemyExtraMap={
-    healer:'enemy_extra_enemy_healer',
-    shielded:'enemy_extra_enemy_shielded',
-    swarm:'enemy_extra_enemy_swarm',
-    turret:'enemy_extra_enemy_turret',
-    eliteGrunt:'enemy_extra_enemy_elitegrunt',
-  };
-  let swappedCount=0;
-  Object.keys(enemyMeshMap).forEach(k=>{
-    const meshKey=enemyMeshMap[k];
-    if(R.meshes[meshKey]&&ETYPES[k]){
-      ETYPES[k].mesh=meshKey;
-      swappedCount++;
-    } else if(R.meshes.enemy&&ETYPES[k]){
-      ETYPES[k].mesh='enemy';
-    }
-  });
-  // Extra enemy meshes
-  Object.keys(enemyExtraMap).forEach(k=>{
-    const meshKey=enemyExtraMap[k];
-    if(R.meshes[meshKey]&&ETYPES[k]){
-      ETYPES[k].mesh=meshKey;
-      swappedCount++;
-    }
-  });
-  log('Enemy per-type mesh swap: '+swappedCount+'/'+Object.keys(ETYPES).length+' types mapped','info');
-
-  // Boss mesh swap
-  if(R.meshes.boss){
-    BOSSES.forEach((b,i)=>{b.mesh=i<2?'boss':'boss_extra';});
-    log('Boss mesh swap active','info');
-  }
-
-  // Effects meshes registered as globals
-  window._shieldMesh=R.meshes.effect_shield?'effect_shield':null;
-  window._explosionRing=R.meshes.effect_explosion_ring?['effect_explosion_ring','effect_explosion_core']:null;
-  window._portalMeshes=R.meshes.effect_portal_ring?['effect_portal_ring','effect_portal_disc']:null;
-  window._pickupSparkle=R.meshes.effect_pickupsparkle?'effect_pickupsparkle':null;
-
-  log('All meshes loaded: '+Object.keys(R.meshes).length+' total','info');
-}
-
-/* Map-specific environment GLB loading — global scope */
-window._mapEnvMeshes={};
-window._envProps=[];
-const mapGLBMap={
-  neon_grid:'/assets/neon_survivor/map_neongrid.glb',
-  crimson_wastes:'/assets/neon_survivor/map_crimsonwastes.glb',
-  void_depths:'/assets/neon_survivor/map_voiddepths.glb',
-  toxic_sewers:'/assets/neon_survivor/map_toxicsewers.glb',
-  frozen_core:'/assets/neon_survivor/map_frozencore.glb',
-  solar_flare:'/assets/neon_survivor/map_solarflare.glb',
-};
-window.loadMapEnv=async function(mapId){
-  const url=mapGLBMap[mapId];if(!url)return;
-  if(window._mapEnvMeshes[mapId])return;
-  await loadGLB(url,'map_'+mapId);
-    window._mapEnvMeshes[mapId]=true;
-    window.log('Loaded map env for '+mapId,'info');
-  scatterEnvProps(mapId);
-};
-function scatterEnvProps(mapId){
-  window._envProps=[];
-  const pfx='map_'+mapId+'_';
-  let keys=Object.keys(R.meshes).filter(k=>k.startsWith(pfx));
-  // Also scatter extra environment and map_props meshes
-  const extraKeys=Object.keys(R.meshes).filter(k=>k.startsWith('env_extra_')||k.startsWith('map_props_'));
-  const allKeys=keys.concat(extraKeys);
-  if(!allKeys.length)return;
-  const count=40+Math.floor(Math.random()*25);
-  const arenaR=2800;
-  for(let i=0;i<count;i++){
-    const k=allKeys[Math.floor(Math.random()*allKeys.length)];
-    const angle=Math.random()*Math.PI*2;
-    const dist=600+Math.random()*arenaR;
-    const x=Math.cos(angle)*dist;
-    const z=Math.sin(angle)*dist;
-    const scale=0.6+Math.random()*1.2;
-    const rot=Math.random()*Math.PI*2;
-    const hue=0.3+Math.random()*0.4;
-    window._envProps.push({mesh:k,x:x,y:20+Math.random()*30,z,sx:scale*40,sy:scale*40,sz:scale*40,r:hue*0.4,g:hue*0.8,b:1,em:0.6+Math.random()*0.5,rot});
-  }
-    window.log('Spawned '+window._envProps.length+' props for '+mapId,'info');
-}
-
 startEngine();
-</script>
-<script type="module">
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-window.__gltfLoader = new GLTFLoader();
-window.log('GLTFLoader ready — starting GLB loading','info');
-if (window.loadModels) window.loadModels();
 </script>
 </body>
 </html>
