@@ -2453,7 +2453,22 @@ const Net={
         this.connected=true;
         await ch.track({id:this.id,name:this.name,isHost:this.isHost});
         if(this.isHost){notify('ROOM '+this.room+' CREATED','var(--cyan)');flashMsg('ROOM: '+this.room,'#22e6ff');if(window._netLobbyCb)window._netLobbyCb({type:'created',code:this.room});}
-        else{notify('JOINED ROOM '+this.room,'var(--grn)');flashMsg('CONNECTED!','#43ff9e');if(window._netLobbyCb)window._netLobbyCb({type:'joined',code:this.room});}
+        else{
+          notify('JOINING ROOM '+this.room+'...','var(--cyan)');
+          // Realtime channels are created on-the-fly, so subscribing to a
+          // channel name always "succeeds" even if no host ever created it.
+          // Confirm an actual host is present before declaring a real join.
+          setTimeout(()=>{
+            if(this.channel!==ch)return; // superseded by a newer connect()/disconnect()
+            if(!this._sawHost){
+              notify('ROOM NOT FOUND','var(--red)');flashMsg('ROOM NOT FOUND','#ff3b5c');
+              this.disconnect();
+            }else{
+              notify('JOINED ROOM '+this.room,'var(--grn)');flashMsg('CONNECTED!','#43ff9e');
+              if(window._netLobbyCb)window._netLobbyCb({type:'joined',code:this.room});
+            }
+          },4000);
+        }
       }else if(status==='CHANNEL_ERROR'||status==='TIMED_OUT'){
         notify('CONNECTION FAILED','var(--red)');this.connected=false;
       }else if(status==='CLOSED'){
