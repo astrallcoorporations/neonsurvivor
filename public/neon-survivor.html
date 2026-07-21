@@ -2816,8 +2816,12 @@ function drawR(shx,shz){
   }
   for(let i=0;i<enemies.length;i++){const e=enemies[i];let s=e.radius*1.9;
     let em=e.flash>0?2.8:(e.boss?1.0+Math.sin(G.t*0.01)*0.3:0.85);if(e.boss)s*=1+Math.sin(G.t*0.005)*0.04;if(e.elite&&!e.boss)em+=0.4;
-    R.push(R.meshes[e.model]?e.model:e.mesh,e.x,e.y,e.z,s,s,s,e.cr,e.cg,e.cb,em,e.spin);}
-  for(let i=0;i<drones.length;i++){const dr=drones[i];const c=dr.def.col;R.push(R.meshes.enemy_enemy_drone?'enemy_enemy_drone':(dr.def.mesh||'cube'),dr.x,dr.y||40,dr.z,26,26,26,c[0],c[1],c[2],1,dr.ang||0);}
+    const eKey=R.meshes[e.model]?e.model:e.mesh;
+    // The constant fast spin reads as a stylized "energy" flourish on abstract
+    // primitives, but on a real asymmetric model it just looks like broken,
+    // glitchy motion — only spin the primitive fallback shapes.
+    R.push(eKey,e.x,e.y,e.z,s,s,s,e.cr,e.cg,e.cb,em,eKey===e.model?0:e.spin);}
+  for(let i=0;i<drones.length;i++){const dr=drones[i];const c=dr.def.col;R.push(R.meshes.enemy_drone?'enemy_drone':(dr.def.mesh||'cube'),dr.x,dr.y||40,dr.z,26,26,26,c[0],c[1],c[2],1,dr.ang||0);}
   for(let i=0;i<loots.length;i++){const l=loots[i];const c=hex3(RAR[l.rar].c);
     R.push('diamond',l.x,l.y||20,l.z,30,30,30,c[0],c[1],c[2],1.4,l.t||0);}
   for(let i=0;i<bullets.length;i++){const b=bullets[i];const z=(b.size||10);R.push('cube',b.x,24,b.z,z*2.6,z*0.9,z*1.0,b.r,b.g,b.b,1.2,-(b.ang||0));}
