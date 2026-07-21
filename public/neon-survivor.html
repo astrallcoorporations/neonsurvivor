@@ -395,12 +395,7 @@ body.embedded #pause,
 body.embedded #gameover{display:none !important}
 
 </style>
-<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
-<!-- import statements can't carry integrity= directly, but modulepreload can —
-     pins + verifies every file the GLTFLoader module actually fetches. -->
-<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js" integrity="sha384-GY5FqjttLCFRt/McQbyaVdCk2O1IQtOeX8Py6NfD89BIAsIyJFRl4UgSXrk2vXAk" crossorigin="anonymous">
-<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/loaders/GLTFLoader.js" integrity="sha384-Lq1Wl94so5JCKGDvezrdVMJhdeKQkwb8iwRo59QrPPd61CnrCJZLxYmFlQ8ZuOKR" crossorigin="anonymous">
-<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/utils/BufferGeometryUtils.js" integrity="sha384-wOjwauvHlJO7K6APr7FmMGH2nupQa3Ndzas9bJZhsAMOK055efJud8ns4aYmASKv" crossorigin="anonymous">
+<!-- GLB import map removed - reverting to primitive-only rendering -->
 </head>
 <body>
 <div id="scanlines"></div>
@@ -2806,10 +2801,9 @@ function draw(){
 function drawR(shx,shz){
   R.setCam(P.x,P.z,shx,shz);R.begin();
   const pulse=0.5+Math.sin(G.t*0.006)*0.2+(P.invuln>0?0.5:0);
-  // glb player ship
-  R.push(R.meshes.player_ship?'player_ship':'sphere',P.x,P.y,P.z,P.radius*2.2,P.radius*2.2,P.radius*2.2,P.downed?0.6:1,P.downed?0.2:1,P.downed?0.3:1,pulse,R.meshes.player_ship?P.angle:0);
-  const w=curWeapon();R.push(R.meshes.weapon_mdl?'weapon_mdl':'cube',P.x+P.aimX*34,26,P.z+P.aimZ*34,64,14,14,w.col[0],w.col[1],w.col[2],1.1,P.angle);
-  if(Coop.active&&!P2.downed)R.push(R.meshes.player_ship?'player_ship':'sphere',P2.x,P2.y,P2.z,P2.radius*2.1,P2.radius*2.1,P2.radius*2.1,0.3,1,0.5,0.7,0);
+  R.push('sphere',P.x,P.y,P.z,P.radius*2.2,P.radius*2.2,P.radius*2.2,P.downed?0.6:1,P.downed?0.2:1,P.downed?0.3:1,pulse,0);
+  const w=curWeapon();R.push('cube',P.x+P.aimX*34,26,P.z+P.aimZ*34,64,14,14,w.col[0],w.col[1],w.col[2],1.1,P.angle);
+  if(Coop.active&&!P2.downed)R.push('sphere',P2.x,P2.y,P2.z,P2.radius*2.1,P2.radius*2.1,P2.radius*2.1,0.3,1,0.5,0.7,0);
   drawRemotePlayers();
   // Buildings from World
   if(window.World&&World.buildings){
@@ -2820,12 +2814,8 @@ function drawR(shx,shz){
   }
   for(let i=0;i<enemies.length;i++){const e=enemies[i];let s=e.radius*1.9;
     let em=e.flash>0?2.8:(e.boss?1.0+Math.sin(G.t*0.01)*0.3:0.85);if(e.boss)s*=1+Math.sin(G.t*0.005)*0.04;if(e.elite&&!e.boss)em+=0.4;
-    const eKey=R.meshes[e.model]?e.model:e.mesh;
-    // The constant fast spin reads as a stylized "energy" flourish on abstract
-    // primitives, but on a real asymmetric model it just looks like broken,
-    // glitchy motion — only spin the primitive fallback shapes.
-    R.push(eKey,e.x,e.y,e.z,s,s,s,e.cr,e.cg,e.cb,em,eKey===e.model?0:e.spin);}
-  for(let i=0;i<drones.length;i++){const dr=drones[i];const c=dr.def.col;R.push(R.meshes.enemy_drone?'enemy_drone':(dr.def.mesh||'cube'),dr.x,dr.y||40,dr.z,26,26,26,c[0],c[1],c[2],1,dr.ang||0);}
+    R.push(e.mesh,e.x,e.y,e.z,s,s,s,e.cr,e.cg,e.cb,em,e.spin);}
+  for(let i=0;i<drones.length;i++){const dr=drones[i];const c=dr.def.col;R.push(dr.def.mesh||'cube',dr.x,dr.y||40,dr.z,26,26,26,c[0],c[1],c[2],1,dr.ang||0);}
   for(let i=0;i<loots.length;i++){const l=loots[i];const c=hex3(RAR[l.rar].c);
     R.push('diamond',l.x,l.y||20,l.z,30,30,30,c[0],c[1],c[2],1.4,l.t||0);}
   for(let i=0;i<bullets.length;i++){const b=bullets[i];const z=(b.size||10);R.push('cube',b.x,24,b.z,z*2.6,z*0.9,z*1.0,b.r,b.g,b.b,1.2,-(b.ang||0));}
@@ -2940,8 +2930,7 @@ function drawRemotePlayers(){
   if(!Net.connected||Net.isHost)return;
   const rp=Net.getRemotePlayers();
   for(const [pid,p] of Object.entries(rp)){
-    const meshKey=R.meshes.player_ship?'player_ship':'sphere';
-    R.push(meshKey,p.x,26,p.z,p.radius*2.1,p.radius*2.1,p.radius*2.1,0.3,1,0.5,0.7,p.angle||0);
+    R.push('sphere',p.x,26,p.z,p.radius*2.1,p.radius*2.1,p.radius*2.1,0.3,1,0.5,0.7,p.angle||0);
   }
 }
 function wireUI(){
@@ -3020,14 +3009,7 @@ function injectUI(){
     },500);
   }
 }
-/* ======================= GLB MODEL LOADER =======================
-   Actual parsing/extraction now lives in a <script type="module"> block
-   near the end of <body> that uses Three.js's GLTFLoader — see the note
-   there for why. That module script runs after this classic script has
-   finished (module scripts are deferred by spec), so window.R already
-   exists with R.gl initialized by the time it runs. It calls
-   R.loadModel(key, verts, norms, idx, cap) directly; primitives render
-   until each model finishes loading. */
+/* GLB model loading removed — rendering primitives only */
 
 function startEngine(){
   try{R.init();}catch(e){console.warn('WebGL2 fallback renderer unavailable',e);}
@@ -3283,103 +3265,5 @@ try{ startEngine(); }
 catch(e){ console.error('startEngine() error:',e); showErrBanner('boot: '+(e&&e.message||e)); }
 </script>
 
-<script type="module">
-/* ======================= GLB MODEL LOADING (Three.js GLTFLoader) =======================
-   A prior hand-rolled binary glTF parser was replaced with Three.js's own
-   GLTFLoader — it's the industry-standard, battle-tested implementation
-   that correctly handles every accessor type/stride, quaternion/TRS
-   composition, and normal-matrix math that a custom parser can easily get
-   subtly wrong. This module is used ONLY to parse and extract world-space
-   geometry; the actual instanced WebGL2 rendering (camera, ground, bloom,
-   primitives) stays on the existing R renderer, which is proven working —
-   no dual-canvas/dual-camera setup like the earlier abandoned attempt.
-
-   Module scripts execute after all classic scripts finish (per spec), so
-   window.R already exists with R.gl initialized by the time this runs. */
-import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-
-const GLB_JOBS=[
-  {file:'player_ship',items:[['player_ship',/./,16]]},
-  {file:'enemies',items:[['enemy_grunt',/Grunt/i,600],['enemy_fast',/Fast/i,600],['enemy_tank',/Tank/i,600],['enemy_exploder',/Exploder/i,600],['enemy_shooter',/Shooter/i,600],['enemy_sniper',/Sniper/i,600],['enemy_drone',/Drone/i,600]]},
-  {file:'bosses',items:[['boss_titan',/Titan/i,8],['boss_voidcore',/VoidCore/i,8],['boss_hydra',/Hydra/i,8],['boss_overseer',/Overseer/i,8],['boss_omega',/Omega/i,8]]},
-];
-
-function extractMerged(scene,re){
-  scene.updateMatrixWorld(true);
-  const V=[],N=[],I=[];let base=0;
-  const nMat=new THREE.Matrix3();
-  const v=new THREE.Vector3(),n=new THREE.Vector3();
-  scene.traverse(obj=>{
-    if(!obj.isMesh||!re.test(obj.name||''))return;
-    const geo=obj.geometry;
-    const pos=geo.attributes.position,nrm=geo.attributes.normal,idx=geo.index;
-    if(!pos)return;
-    nMat.getNormalMatrix(obj.matrixWorld);
-    const nv=pos.count;
-    for(let i=0;i<nv;i++){
-      v.fromBufferAttribute(pos,i).applyMatrix4(obj.matrixWorld);
-      V.push(v.x,v.y,v.z);
-      if(nrm){n.fromBufferAttribute(nrm,i).applyMatrix3(nMat).normalize();N.push(n.x,n.y,n.z);}
-      else N.push(0,1,0);
-    }
-    if(idx){for(let i=0;i<idx.count;i++)I.push(base+idx.getX(i));}
-    else{for(let i=0;i<nv;i++)I.push(base+i);}
-    base+=nv;
-  });
-  if(!V.length){const names=[];scene.traverse(o=>{if(o.isMesh&&o.name)names.push(o.name);});console.warn('extractMerged: no meshes matched regex. Available mesh names:',names.join(', '));return null;}
-  let mnx=1e9,mny=1e9,mnz=1e9,mxx=-1e9,mxy=-1e9,mxz=-1e9;
-  for(let i=0;i<V.length;i+=3){if(V[i]<mnx)mnx=V[i];if(V[i]>mxx)mxx=V[i];if(V[i+1]<mny)mny=V[i+1];if(V[i+1]>mxy)mxy=V[i+1];if(V[i+2]<mnz)mnz=V[i+2];if(V[i+2]>mxz)mxz=V[i+2];}
-  const cx=(mnx+mxx)/2,cy=(mny+mxy)/2,cz=(mnz+mxz)/2,ext=Math.max(mxx-mnx,mxy-mny,mxz-mnz)||1,sc=1/ext;
-  for(let i=0;i<V.length;i+=3){V[i]=(V[i]-cx)*sc;V[i+1]=(V[i+1]-cy)*sc;V[i+2]=(V[i+2]-cz)*sc;}
-  return {verts:V,norms:N,idx:I};
-}
-
-const LOAD_RETRIES=2;
-async function loadGLBWithRetry(loader,file){
-  for(let attempt=0;attempt<=LOAD_RETRIES;attempt++){
-    try{return await loader.loadAsync('assets/neon_survivor/'+file+'.glb');}
-    catch(e){
-      console.warn('glb load '+file+' attempt '+(attempt+1)+' failed:',e);
-      if(attempt<LOAD_RETRIES)await new Promise(r=>setTimeout(r,300*(attempt+1)));
-    }
-  }
-  throw new Error('glb load '+file+' failed after '+(LOAD_RETRIES+1)+' attempts');
-}
-async function loadGLBModelsThree(){
-  const R=window.R;
-  if(!R||!R.gl){console.warn('R not ready — skipping GLB load');return;}
-  const loader=new GLTFLoader();
-  const loadStart=performance.now();
-  const results=await Promise.allSettled(
-    GLB_JOBS.map(job=>loadGLBWithRetry(loader,job.file).then(gltf=>({job,gltf})))
-  );
-  let loaded=0,failed=0,extracted=0;
-  for(const result of results){
-    if(result.status==='rejected'){
-      failed++;console.error('glb load failed:',result.reason);
-      if(window.showErrBanner)window.showErrBanner('glb: '+(result.reason?.message||result.reason));
-      continue;
-    }
-    loaded++;const{job,gltf}=result.value;
-    for(const[key,re,cap]of job.items){
-      try{
-        const m=extractMerged(gltf.scene,re);
-        if(m){R.loadModel(key,m.verts,m.norms,m.idx,cap);extracted++;}
-        else console.warn('glb extract '+key+': no meshes matched /'+re.source+'/ in '+job.file+'.glb');
-      }catch(e){
-        console.error('glb extract '+key,e);
-        if(window.showErrBanner)window.showErrBanner('glb '+key+': '+(e?.message||e));
-      }
-    }
-  }
-  const ms=Math.round(performance.now()-loadStart);
-  console.log('GLB models loaded: '+loaded+'/'+GLB_JOBS.length+' files, '+extracted+' meshes ('+ms+'ms'+(failed?', '+failed+' failed':'')+')');
-  R.modelsReady=true;
-  if(typeof window.onGraphicsReady==='function')window.onGraphicsReady();
-  window.dispatchEvent(new Event('models-ready'));
-}
-loadGLBModelsThree();
-</script>
 </body>
 </html>

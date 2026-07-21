@@ -464,9 +464,5 @@ window.addEventListener('keydown',e=>{
   }
 });
 
-/* modelManager stub for boss model key mapping */
-window.modelManager={bossKeyForIndex:function(idx){return idx<2?'boss':'boss_extra';}};
-window.onGraphicsReady=function(){
-  try{Bridge.send({type:'modelsReady'});}catch(_){}
-};
+/* modelManager stub removed — GLB models no longer used */
 })();
