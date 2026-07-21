@@ -1077,12 +1077,11 @@ const R={
     gl.uniformMatrix4fv(this.progMesh.u.uView,false,this.view);
     gl.uniformMatrix4fv(this.progMesh.u.uProj,false,this.proj);
     gl.uniform3f(this.progMesh.u.uLight,0.4,1.0,0.5);
-    gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
     for(const k in this.meshes){const m=this.meshes[k];if(!m.n)continue;
       gl.bindVertexArray(m.vao);gl.bindBuffer(gl.ARRAY_BUFFER,m.inst);
       gl.bufferSubData(gl.ARRAY_BUFFER,0,m.arr.subarray(0,m.n*11));
       gl.drawElementsInstanced(gl.TRIANGLES,m.count,m.idxType||gl.UNSIGNED_SHORT,0,m.n);}
-    gl.bindVertexArray(null);gl.disable(gl.BLEND);gl.disable(gl.DEPTH_TEST);gl.depthMask(false);
+    gl.bindVertexArray(null);gl.disable(gl.DEPTH_TEST);gl.depthMask(false);
     if(this.bloom)this.postBloom();
   },
   drawGround(){
@@ -1200,23 +1199,11 @@ precision highp float;
 in vec3 vWorld; uniform vec3 uCam; uniform float uTime; uniform float uHalf;
 uniform vec3 uGridCol; uniform vec3 uBaseCol; uniform vec3 uFogCol; uniform float uGridAlpha;
 out vec4 frag;
-float gridline(vec2 p,float cellSz,float w){
-  vec2 g=abs(fract(p/cellSz-0.5)-0.5)/fract(w);
-  float l=min(g.x,g.y); return 1.0-min(l,1.0);
-}
 void main(){
   vec2 p=vWorld.xz;
   float dcam=distance(p,uCam.xz);
-  // Was 1.0-dcam/4200 with no floor — ground went nearly pitch black
-  // even at moderate play distance. Gentler falloff + a floor so it
-  // never fully crushes to black.
   float fog=clamp(1.0-dcam/6000.0,0.35,1.0);
-  float g1=gridline(p,140.0,1.6/max(dcam*0.0009,0.5));
-  float g2=gridline(p,700.0,2.4/max(dcam*0.0009,0.5));
-  vec3 col=uBaseCol + uGridCol*g1*1.0*uGridAlpha + uGridCol*g2*1.6*uGridAlpha;
-  float r=length(p);
-  col += uGridCol*0.12*uGridAlpha*smoothstep(0.9,1.0,sin(r*0.01-uTime*1.5)*0.5+0.5)*fog;
-  float edge=max(abs(p.x),abs(p.y));
+  vec3 col=uBaseCol;
   float bnd=smoothstep(uHalf-120.0,uHalf,max(abs(p.x),abs(p.y)));
   col=mix(col,uFogCol,bnd*0.7);
   col*=fog;
