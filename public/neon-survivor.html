@@ -572,6 +572,9 @@ body.embedded #gameover{display:none !important}
 <div id="tooltip"></div>
 
 <script src="js/bootstrap.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7/dist/umd/supabase.js"
+  integrity="sha384-hazsLVND17GNLVdtV19te6qbFT2YuLgl8SamcF+QR5eIOC+W4dGKrUNMxU1jH1zD"
+  crossorigin="anonymous"></script>
 <script>
 "use strict";
 (function(){
@@ -2401,87 +2404,75 @@ function updateCoopHUD(){
 }
 
 /* ======================= ONLINE MULTIPLAYER (WebSocket) ======================= */
+/* Online multiplayer transport: Supabase Realtime (broadcast + presence).
+   A raw WebSocket to a same-origin /ws server cannot work once this game
+   is deployed on Vercel (serverless — no persistent socket process), so
+   this uses Supabase's hosted Realtime channels instead. Public channels
+   (no RLS policies needed) work out of the box with the anon key. */
+const SUPABASE_URL='https://auimjkjgzscplvvpunxb.supabase.co';
+const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF1aW1qa2pnenNjcGx2dnB1bnhiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2MjY1NTAsImV4cCI6MjEwMDIwMjU1MH0.iJ6C8QGlViDHpbU2RR9G9KMdtzMiPf6iq_LcG9B6GOI';
 const Net={
-  ws:null, room:null, id:null, isHost:false, members:[], latency:50, connected:false,
-  _stateQueue:null, _inputCb:null, _remotePlayers:{},
-  _tickRate:20, _lastSend:0, _lastState:0,
+  sb:null, channel:null, room:null, id:null, name:'', isHost:false, members:[], latency:50, connected:false,
+  _inputCb:null, _remotePlayers:{}, _sawHost:false,
+  _tickRate:20, _lastStateT:0,
+  _roomCode(){const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='';for(let i=0;i<4;i++)s+=c[Math.floor(Math.random()*c.length)];return s;},
+  _client(){
+    if(this.sb)return this.sb;
+    if(!window.supabase||!window.supabase.createClient){notify('MULTIPLAYER UNAVAILABLE','var(--red)');return null;}
+    this.sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{realtime:{params:{eventsPerSecond:30}}});
+    return this.sb;
+  },
   connect(name, code){
-    if(this.ws){this.disconnect();}
-    const proto=location.protocol==='https:'?'wss:':'ws:';
-    const url=proto+'//'+location.host+'/ws';
-    try{ this.ws=new WebSocket(url); }catch(e){ notify('CONNECTION FAILED','var(--red)');return; }
-    this.ws.onopen=()=>{
-      this.connected=true;
-      if(code){ this.ws.send(JSON.stringify({type:'join',code,name})); }
-      else { this.ws.send(JSON.stringify({type:'create',name})); }
-      notify('CONNECTING...','var(--cyan)');
-    };
-    this.ws.onmessage=(ev)=>{
-      let msg;try{msg=JSON.parse(ev.data);}catch{return;}
-      this._handleMsg(msg);
-    };
-    this.ws.onclose=()=>{
-      this.connected=false;this.room=null;this.id=null;this.isHost=false;
-      notify('DISCONNECTED','var(--red)');
-      if(window._netLobbyCb)window._netLobbyCb();
-    };
-    this.ws.onerror=()=>{ notify('SOCKET ERROR','var(--red)'); };
+    if(this.channel){this.disconnect();}
+    const sb=this._client();if(!sb)return;
+    this.name=name||'Player';
+    this.isHost=!code;
+    this.id=this.isHost?'host':('p'+Math.random().toString(36).slice(2,8));
+    this.room=code||this._roomCode();
+    notify('CONNECTING...','var(--cyan)');
+    const ch=sb.channel('nsv-room-'+this.room,{config:{broadcast:{self:false},presence:{key:this.id}}});
+    this.channel=ch;
+    ch.on('broadcast',{event:'state'},({payload})=>{ if(!this.isHost)this._applyState(payload); });
+    ch.on('broadcast',{event:'input'},({payload})=>{ if(this.isHost&&this._inputCb&&payload&&payload.id!==this.id)this._inputCb(payload.id,payload.data); });
+    ch.on('broadcast',{event:'chat'},({payload})=>{ if(payload)notify((payload.name||'???')+': '+payload.msg,'var(--cyan)'); });
+    ch.on('broadcast',{event:'ping'},({payload})=>{ if(payload&&payload.from!==this.id)ch.send({type:'broadcast',event:'pong',payload:{to:payload.from,t:payload.t}}); });
+    ch.on('broadcast',{event:'pong'},({payload})=>{ if(payload&&payload.to===this.id)this.latency=Date.now()-payload.t; });
+    ch.on('presence',{event:'sync'},()=>{
+      const st=ch.presenceState();
+      const prevIds=new Set(this.members.map(m=>m.id));
+      this.members=Object.keys(st).map(k=>st[k][0]).filter(Boolean);
+      for(const m of this.members)if(!prevIds.has(m.id))notify((m.name||m.id)+' JOINED','var(--grn)');
+      const curIds=new Set(this.members.map(m=>m.id));
+      for(const pid of prevIds)if(!curIds.has(pid)){notify(pid+' LEFT','var(--pur)');delete this._remotePlayers[pid];}
+      if(curIds.has('host'))this._sawHost=true;
+      if(this._sawHost&&!curIds.has('host')&&this.connected&&!this.isHost){notify('HOST DISCONNECTED','var(--red)');this.disconnect();return;}
+      if(window._netLobbyCb)window._netLobbyCb({type:'sync',members:this.members});
+    });
+    ch.subscribe(async (status,err)=>{
+      if(status==='SUBSCRIBED'){
+        this.connected=true;
+        await ch.track({id:this.id,name:this.name,isHost:this.isHost});
+        if(this.isHost){notify('ROOM '+this.room+' CREATED','var(--cyan)');flashMsg('ROOM: '+this.room,'#22e6ff');if(window._netLobbyCb)window._netLobbyCb({type:'created',code:this.room});}
+        else{notify('JOINED ROOM '+this.room,'var(--grn)');flashMsg('CONNECTED!','#43ff9e');if(window._netLobbyCb)window._netLobbyCb({type:'joined',code:this.room});}
+      }else if(status==='CHANNEL_ERROR'||status==='TIMED_OUT'){
+        notify('CONNECTION FAILED','var(--red)');this.connected=false;
+      }else if(status==='CLOSED'){
+        if(this.connected){notify('DISCONNECTED','var(--red)');if(window._netLobbyCb)window._netLobbyCb();}
+        this.connected=false;
+      }
+    });
   },
   disconnect(){
-    if(this.ws){try{this.ws.send(JSON.stringify({type:'leave'}));}catch{}this.ws.close();this.ws=null;}
+    if(this.channel){try{this.channel.untrack();}catch{}try{this.sb.removeChannel(this.channel);}catch{}this.channel=null;}
     this.room=null;this.id=null;this.isHost=false;this.members=[];this.connected=false;
-    this._remotePlayers={};
-  },
-  _handleMsg(msg){
-    switch(msg.type){
-      case 'created':
-        this.room=msg.code;this.id=msg.id;this.isHost=true;
-        notify('ROOM '+msg.code+' CREATED','var(--cyan)');flashMsg('ROOM: '+msg.code,'#22e6ff');
-        if(window._netLobbyCb)window._netLobbyCb(msg);
-        break;
-      case 'joined':
-        this.room=msg.code;this.id=msg.id;this.isHost=false;this.members=msg.members||[];
-        notify('JOINED ROOM '+msg.code,'var(--grn)');flashMsg('CONNECTED!','#43ff9e');
-        if(window._netLobbyCb)window._netLobbyCb(msg);
-        break;
-      case 'member_joined':
-        this.members=msg.members||[];
-        notify((msg.name||msg.id)+' JOINED','var(--grn)');
-        if(window._netLobbyCb)window._netLobbyCb(msg);
-        break;
-      case 'member_left':
-        this.members=msg.members||[];
-        notify((msg.name||msg.id)+' LEFT','var(--pur)');
-        delete this._remotePlayers[msg.id];
-        if(window._netLobbyCb)window._netLobbyCb(msg);
-        break;
-      case 'host_left':
-        notify('HOST DISCONNECTED','var(--red)');this.disconnect();
-        if(window._netLobbyCb)window._netLobbyCb(msg);
-        break;
-      case 'state':
-        this._applyState(msg.data);
-        break;
-      case 'input':
-        if(this.isHost&&this._inputCb)this._inputCb(msg.id,msg.data);
-        break;
-      case 'pong':
-        this.latency=Date.now()-msg.t;
-        break;
-      case 'chat':
-        notify((msg.name||'???')+': '+msg.msg,'var(--cyan)');
-        break;
-      case 'error':
-        notify('ERROR: '+msg.msg,'var(--red)');flashMsg(msg.msg,'#ff3b5c');
-        break;
-    }
+    this._remotePlayers={};this._sawHost=false;
   },
   // HOST: send game state snapshot to all clients
   sendState(t){
-    if(!this.isHost||!this.connected)return;
+    if(!this.isHost||!this.connected||!this.channel)return;
     const now=performance.now();
-    if(now-this._lastState<1000/this._tickRate)return; // cap at tick rate
-    this._lastState=now;
+    if(now-this._lastStateT<1000/this._tickRate)return; // cap at tick rate
+    this._lastStateT=now;
     // compact state: player pos/angle/hp, remote player input targets, enemies (subset), wave
     const state={
       t:Math.floor(G.t),
@@ -2498,12 +2489,11 @@ const Net={
     for(const [pid,rp] of Object.entries(this._remotePlayers)){
       state.remote[pid]={x:rp.x|0,z:rp.z|0,angle:rp.angle|0,hp:rp.hp|0,downed:rp.downed?1:0,weapon:rp.weapon};
     }
-    try{this.ws.send(JSON.stringify({type:'state',data:state}));}catch{}
+    try{this.channel.send({type:'broadcast',event:'state',payload:state});}catch{}
   },
   // CLIENT: apply received state
   _applyState(data){
     if(!data)return;
-    this._lastState=data;
     // interpolate remote players
     if(data.remote){
       for(const [pid,rd] of Object.entries(data.remote)){
@@ -2516,16 +2506,16 @@ const Net={
   },
   // CLIENT: send input to host
   sendInput(data){
-    if(!this.connected||this.isHost)return;
-    try{this.ws.send(JSON.stringify({type:'input',data}));}catch{}
+    if(!this.connected||this.isHost||!this.channel)return;
+    try{this.channel.send({type:'broadcast',event:'input',payload:{id:this.id,data}});}catch{}
   },
   chat(msg){
-    if(!this.connected)return;
-    try{this.ws.send(JSON.stringify({type:'chat',msg}));}catch{}
+    if(!this.connected||!this.channel)return;
+    try{this.channel.send({type:'broadcast',event:'chat',payload:{name:this.name,msg}});}catch{}
   },
   ping(){
-    if(!this.connected||!this.ws)return;
-    try{this.ws.send(JSON.stringify({type:'ping',t:Date.now()}));}catch{}
+    if(!this.connected||!this.channel)return;
+    try{this.channel.send({type:'broadcast',event:'ping',payload:{from:this.id,t:Date.now()}});}catch{}
   },
   getRemotePlayers(){return this._remotePlayers;}
 };
