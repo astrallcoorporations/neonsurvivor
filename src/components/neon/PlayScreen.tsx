@@ -179,12 +179,13 @@ export default function PlayScreen({ mode, netConfig, onExit }: Props) {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && started && !isOver) {
         e.preventDefault();
-        if (!showPause) { pause(); setShowPause(true); }
+        pause();
+        setShowPause(true);
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [started, isOver, showPause, pause]);
+  }, [started, isOver, pause]);
 
   const handleQuit = () => {
     quit();
@@ -247,7 +248,7 @@ export default function PlayScreen({ mode, netConfig, onExit }: Props) {
               <h2 className="font-display text-3xl neon-holo-title mb-6">PAUSED</h2>
               <div className="space-y-2.5">
                 <button className="neon-btn w-full py-3" onClick={() => { resume(); setShowPause(false); }}>▶ RESUME</button>
-                <button className="neon-btn-ghost w-full py-2.5 text-sm" onClick={handleQuit}>◀ ABANDON RUN</button>
+                <button className="neon-btn-ghost w-full py-2.5 text-sm" onClick={handleQuit}>◀ RETURN TO LOBBY</button>
               </div>
               <p className="font-mono-neon text-[10px] neon-text-faint mt-5 tracking-widest">ESC TO PAUSE</p>
             </motion.div>
