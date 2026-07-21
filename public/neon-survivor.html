@@ -574,6 +574,19 @@ body.embedded #gameover{display:none !important}
 <script src="js/bootstrap.js"></script>
 <script>
 "use strict";
+(function(){
+  function bannerNow(msg){
+    let b=document.getElementById('errbanner');
+    if(!b){b=document.createElement('div');b.id='errbanner';
+      b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#c00;color:#fff;'+
+        'font:12px monospace;padding:6px 10px;white-space:pre-wrap;pointer-events:none;max-height:40%;overflow:auto';
+      document.body.appendChild(b);}
+    b.textContent+=(b.textContent?'\n':'')+'ERROR: '+msg;
+  }
+  window.showErrBanner=bannerNow;
+  window.addEventListener('error',e=>bannerNow((e.message||'script error')+' @ '+(e.filename||'')+':'+(e.lineno||'')));
+  window.addEventListener('unhandledrejection',e=>bannerNow('promise: '+((e.reason&&e.reason.message)||e.reason)));
+})();
 /* =====================================================================
    NEON SURVIVOR — single-file 3D WebGL roguelite survivor
    Sections: Globals · Math · Audio · Renderer(WebGL2+bloom) · FX2D
@@ -2889,9 +2902,9 @@ function frame(ts){
   requestAnimationFrame(frame);G.t=ts;let dt=(ts-_last)/1000;_last=ts;if(dt>0.05)dt=0.05;if(dt<=0)dt=0.016;
   // Guard each subsystem so one throw can't silently freeze the whole game.
   try{ if(G.running&&!G.paused&&!G.over&&!G.levelOpen)update(dt); }
-  catch(e){ if(_frameErr++<3)console.error('update() error:',e); }
+  catch(e){ if(_frameErr++<3){console.error('update() error:',e);showErrBanner('update: '+(e&&e.message||e));} }
   try{ if(G.running||G.over)draw(); }
-  catch(e){ if(_frameErr++<3)console.error('draw() error:',e); }
+  catch(e){ if(_frameErr++<3){console.error('draw() error:',e);showErrBanner('draw: '+(e&&e.message||e));} }
   try{ if(G.running&&typeof updateHUD==='function')updateHUD(); }catch(e){}
   // Online multiplayer: host sends state, client applies remote state
   try{ if(Net.connected&&G.running){
@@ -3319,7 +3332,8 @@ Object.assign(window,{
   Coop,P2,Input,Grid,R,FX,Audio,Net
 });
 
-startEngine();
+try{ startEngine(); }
+catch(e){ console.error('startEngine() error:',e); showErrBanner('boot: '+(e&&e.message||e)); }
 </script>
 </body>
 </html>
