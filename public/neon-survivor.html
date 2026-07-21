@@ -166,7 +166,7 @@ h1.title{font-size:46px;font-weight:900;letter-spacing:8px;text-align:center;
 #bmHud{position:absolute;bottom:78px;right:14px;background:var(--panel);border:1px solid var(--mag);border-radius:8px;padding:8px 12px;display:none;font-size:11px;max-width:220px}
 
 /* ============================================================
-   CRAZY REDESIGN ΓÇö Neon Survivor v2 override layer
+   CRAZY REDESIGN — Neon Survivor v2 override layer
    - Cyberpunk display fonts (Orbitron / Rajdhani)
    - Glassmorphism, animated gradient borders, scanline overlay
    - Holographic title, glow-pulse buttons, chromatic accents
@@ -382,7 +382,7 @@ h1.title{
   box-shadow:0 0 14px rgba(255,43,214,.3);
 }
 
-/* hide when embedded in shell ΓÇö parent provides its own chrome */
+/* hide when embedded in shell — parent provides its own chrome */
 body.embedded #menu,
 body.embedded #pause,
 body.embedded #gameover{display:none !important}
@@ -412,7 +412,7 @@ body.embedded #gameover{display:none !important}
 
   <div id="weaponbox">
     <span id="wname">BLASTER</span>
-    <small id="wdesc">Rapid neon bolts ΓÇó Q/E to swap</small>
+    <small id="wdesc">Rapid neon bolts • Q/E to swap</small>
   </div>
 
   <div id="bossbar">
@@ -441,7 +441,7 @@ body.embedded #gameover{display:none !important}
   <div class="card">
     <h1 class="title">NEON SURVIVOR</h1>
     <div class="sub">3D CYBERPUNK ROGUELITE</div>
-    <div id="credits"><span class="cred">ΓÜí CREDITS: <span id="credAmt">0</span></span></div>
+    <div id="credits"><span class="cred">⚡ CREDITS: <span id="credAmt">0</span></span></div>
     <div id="metaBar">
       <span class="metaChip">PRESTIGE <span id="prestigeLvl">0</span></span>
       <span class="metaChip">ASCENSION <span id="ascensionLvl">0</span></span>
@@ -456,9 +456,9 @@ body.embedded #gameover{display:none !important}
       <button class="btn" style="width:auto;padding:8px 16px;font-size:12px" id="prestigeBtn">PRESTIGE</button>
     </div>
     <div class="help">
-      <b>WASD</b> move ┬╖ <b>Mouse</b> aim ┬╖ auto-fire ON ┬╖ <kbd class="kbd">L-Click</kbd> overdrive ┬╖
-      <kbd class="kbd">Space</kbd> dash ┬╖ <kbd class="kbd">1-9</kbd> abilities ┬╖ <kbd class="kbd">Q</kbd>/<kbd class="kbd">E</kbd> swap weapon ┬╖
-      <kbd class="kbd">T</kbd> skill tree ┬╖ <kbd class="kbd">Esc</kbd> pause
+      <b>WASD</b> move · <b>Mouse</b> aim · auto-fire ON · <kbd class="kbd">L-Click</kbd> overdrive ·
+      <kbd class="kbd">Space</kbd> dash · <kbd class="kbd">1-9</kbd> abilities · <kbd class="kbd">Q</kbd>/<kbd class="kbd">E</kbd> swap weapon ·
+      <kbd class="kbd">T</kbd> skill tree · <kbd class="kbd">Esc</kbd> pause
     </div>
     <div class="row" style="margin-top:14px"><button class="btn" style="width:auto;padding:10px 26px" id="howBtn">HOW TO PLAY</button></div>
   </div>
@@ -480,8 +480,8 @@ body.embedded #gameover{display:none !important}
     <div class="sub">SKILL POINTS: <span id="sp">0</span></div>
     <div id="tree"><svg id="treeSvg"></svg></div>
     <div class="treelegend">
-      <span style="color:var(--red)">ΓùÅ OFFENSE</span><span style="color:var(--cyan)">ΓùÅ DEFENSE</span>
-      <span style="color:var(--yel)">ΓùÅ UTILITY</span><span style="color:var(--grn)">ΓùÅ SUMMONER</span>
+      <span style="color:var(--red)">● OFFENSE</span><span style="color:var(--cyan)">● DEFENSE</span>
+      <span style="color:var(--yel)">● UTILITY</span><span style="color:var(--grn)">● SUMMONER</span>
     </div>
     <div class="row" style="margin-top:12px"><button class="btn" style="width:auto;padding:10px 30px" id="treeClose">RESUME</button></div>
   </div>
@@ -548,7 +548,7 @@ body.embedded #gameover{display:none !important}
 <div class="screen" id="blackmarket">
   <div class="card" style="min-width:360px">
     <h1 class="title" style="font-size:22px;color:#ff2bd6">BLACK MARKET</h1>
-    <div class="sub">Risky upgrades ΓÇö may backfire</div>
+    <div class="sub">Risky upgrades — may backfire</div>
     <div id="bmChoices"></div>
     <button class="btn" id="bmClose">LEAVE</button>
   </div>
@@ -565,14 +565,11 @@ body.embedded #gameover{display:none !important}
 <div id="tooltip"></div>
 
 <script src="js/bootstrap.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7/dist/umd/supabase.js"
-  integrity="sha384-hazsLVND17GNLVdtV19te6qbFT2YuLgl8SamcF+QR5eIOC+W4dGKrUNMxU1jH1zD"
-  crossorigin="anonymous"></script>
 <script>
 "use strict";
 /* =====================================================================
-   NEON SURVIVOR ΓÇö single-file 3D WebGL roguelite survivor
-   Sections: Globals ┬╖ Math ┬╖ Audio ┬╖ Renderer(WebGL2+bloom) ┬╖ FX2D
+   NEON SURVIVOR — single-file 3D WebGL roguelite survivor
+   Sections: Globals · Math · Audio · Renderer(WebGL2+bloom) · FX2D
    Gameplay systems are appended below the SYSTEMS marker.
    ===================================================================== */
 
@@ -1421,17 +1418,17 @@ function killEnemy(e){
   if(e.elite&&!e.boss){G.globalSlow=0.3;G.slowT=0.25;}
   G.killStreak++;G.killStreakTimer=2.5;
   if(G.killStreak>G.killStreakMax)G.killStreakMax=G.killStreak;
-  if(G.killStreak===10)notify('KILL STREAK ├ù10!','var(--yel)');
-  else if(G.killStreak===25)notify('KILL STREAK ├ù25!','var(--mag)');
-  else if(G.killStreak===50)notify('KILL STREAK ├ù50!','var(--red)');
-  else if(G.killStreak===100)notify('UNSTOPPABLE ├ù100!','var(--cyan)');
+  if(G.killStreak===10)notify('KILL STREAK ×10!','var(--yel)');
+  else if(G.killStreak===25)notify('KILL STREAK ×25!','var(--mag)');
+  else if(G.killStreak===50)notify('KILL STREAK ×50!','var(--red)');
+  else if(G.killStreak===100)notify('UNSTOPPABLE ×100!','var(--cyan)');
   for(let i=0;i<(e.boss?30:e.elite?10:5);i++){const a=rand(0,TWO_PI),s=rand(120,e.boss?700:420);
     spawnParticle(e.x,e.z,e.radius,Math.cos(a)*s,rand(80,360),Math.sin(a)*s,rand(0.3,0.8),rand(8,e.boss?30:16),e.cr,e.cg,e.cb,'cube',true);}
   rings.push({x:e.x,z:e.z,r:10,max:e.boss?420:e.radius*4,life:0.5,maxlife:0.5,r0:e.cr,g0:e.cg,b0:e.cb});
   // xp orbs
   const orbN=Math.min(e.xp,e.boss?40:12);
   for(let i=0;i<orbN;i++)spawnOrb(e.x+rand(-e.radius,e.radius),e.z+rand(-e.radius,e.radius),Math.max(1,Math.floor(e.xp/orbN)));
-  // loot (base drops only ΓÇö item system handled by wrapper)
+  // loot (base drops only — item system handled by wrapper)
   let lootChance=e.boss?1:e.elite?0.7:0.02+P.luck*0.01;
   if(Math.random()<lootChance)dropLoot(e.x,e.z,e.boss?'mythic':e.elite?null:null);
   if(e.boom)explode(e.x,e.z,160,e.dmg,1,0.5,0.1);
@@ -1481,7 +1478,7 @@ function spawnBoss(idx){
   e.phase=1;e.attackTimer=2;e.patIdx=0;e.spiralAng=0;e.enraged=false;e.elite=true;
   enemies.push(e);G.bossActive=e;
   Audio.boss();Audio.bossTune=true;Audio.musicStep=0;
-  flashMsg(d.name,'#ff2bd6');notify('ΓÜá BOSS: '+d.name,'var(--mag)');
+  flashMsg(d.name,'#ff2bd6');notify('⚠ BOSS: '+d.name,'var(--mag)');
   document.getElementById('bossbar').style.display='flex';
   document.getElementById('bossname').textContent=d.name;
   G.shake=Math.min(G.shake+20,40);
@@ -1553,7 +1550,7 @@ function spawnSecretBoss(){
   e.phase=1;e.attackTimer=1.5;e.patIdx=0;e.spiralAng=0;e.enraged=false;e.elite=true;
   enemies.push(e);G.bossActive=e;
   Audio.boss();Audio.bossTune=true;
-  flashMsg('SECRET BOSS','#9b5cff');notify('ΓÜá VOID EMPEROR','var(--pur)');
+  flashMsg('SECRET BOSS','#9b5cff');notify('⚠ VOID EMPEROR','var(--pur)');
   document.getElementById('bossbar').style.display='flex';
   document.getElementById('bossname').textContent='VOID EMPEROR';
   G.shake=50;
@@ -1570,7 +1567,7 @@ function offerRelic(){
   const cont=document.getElementById('relicChoices');cont.innerHTML='';
   picks.forEach(r=>{
     const d=document.createElement('div');d.className='choice';d.style.borderColor='var(--pur)';
-    d.innerHTML=`<div class="ci">≡ƒö«</div><div class="cn">${r.name}</div><div class="cd">${r.desc}</div>`;
+    d.innerHTML=`<div class="ci">🔮</div><div class="cn">${r.name}</div><div class="cd">${r.desc}</div>`;
     d.onclick=()=>{P.relics=P.relics||[];P.relics.push(r.id);
       if(!Meta.data.relicsOwned.includes(r.id))Meta.data.relicsOwned.push(r.id);
       r.apply(P);Meta.save();Audio.ui();document.getElementById('relicpick').classList.remove('show');
@@ -1598,7 +1595,7 @@ function openLevelUp(){
   G.levelOpen=true;G.paused=true;Audio.level();
   const cont=document.getElementById('choices');cont.innerHTML='';
   const picks=rollUpgrades(3);
-  document.getElementById('luSub').textContent='LEVEL '+P.level+' ΓÇö CHOOSE AN UPGRADE';
+  document.getElementById('luSub').textContent='LEVEL '+P.level+' — CHOOSE AN UPGRADE';
   picks.forEach(u=>{
     const d=document.createElement('div');d.className='choice';d.style.borderColor=RAR[u.rarity].c;
     d.innerHTML=`<div class="ci">${u.icon}</div><div class="cn">${u.name}</div>
@@ -1618,61 +1615,61 @@ const RAR={common:{n:'COMMON',c:'#b8c4d8',m:1},uncommon:{n:'UNCOMMON',c:'#43ff9e
 
 function U(name,desc,icon,rarity,weight,apply){return {name,desc,icon,rarity,weight,apply};}
 const UPGRADES=[
-  U('Overclock','+15% damage','≡ƒùí∩╕Å','common',10,()=>P.dmgMul*=1.15),
-  U('Power Core','+25% damage','≡ƒùí∩╕Å','rare',5,()=>P.dmgMul*=1.25),
-  U('Singularity Rounds','+40% damage','≡ƒÆÑ','epic',2,()=>P.dmgMul*=1.4),
-  U('Trigger Mod','+15% fire rate','ΓÜí','common',10,()=>P.fireRateMul*=1.15),
-  U('Hyper Trigger','+28% fire rate','ΓÜí','rare',5,()=>P.fireRateMul*=1.28),
-  U('Sharp Optics','+7% crit chance','≡ƒÄ»','common',9,()=>P.crit=Math.min(0.9,P.crit+0.07)),
-  U('Assassin','+12% crit, +40% crit dmg','≡ƒÄ»','epic',3,()=>{P.crit=Math.min(0.9,P.crit+0.12);P.critDmg+=0.4;}),
-  U('Brutal Force','+35% crit damage','≡ƒö¬','uncommon',6,()=>P.critDmg+=0.35),
-  U('Split Shot','+1 projectile','Γ£│∩╕Å','uncommon',6,()=>P.projAdd++),
-  U('Multishot','+2 projectiles','Γ£│∩╕Å','epic',2,()=>P.projAdd+=2),
-  U('Velocity','+22% projectile speed','≡ƒîá','common',8,()=>P.projSpeedMul*=1.22),
-  U('Piercing Tips','+1 pierce','≡ƒôî','uncommon',6,()=>P.pierceAdd++),
-  U('Rail Spike','+2 pierce','≡ƒôî','rare',3,()=>P.pierceAdd+=2),
-  U('Light Frame','+12% move speed','≡ƒÅâ','common',8,()=>P.moveMul*=1.12),
-  U('Servo Legs','+20% move speed','≡ƒÅâ','rare',4,()=>P.moveMul*=1.2),
-  U('Vitality','+30 max HP','Γ¥ñ∩╕Å','common',9,()=>{P.maxhp+=30;P.hp+=30;}),
-  U('Titan Plating','+70 max HP','Γ¥ñ∩╕Å','rare',4,()=>{P.maxhp+=70;P.hp+=70;}),
-  U('Nanoheal','+0.8 HP/sec regen','≡ƒÆÜ','common',8,()=>P.regen+=0.8),
-  U('Regrowth','+2 HP/sec regen','≡ƒÆÜ','epic',3,()=>P.regen+=2),
-  U('Magnet Field','+30% pickup range','≡ƒº▓','common',8,()=>P.pickupBonus+=0.3),
-  U('Extra Dash','+1 dash charge','≡ƒÆ¿','rare',4,()=>{P.dashMax++;P.dashCharges++;}),
-  U('Kinetic Boots','-25% dash cooldown','≡ƒÆ¿','uncommon',5,()=>P.dashCDmul=(P.dashCDmul||1)*0.75),
-  U('Bigger Booms','+30% explosion radius','≡ƒÆú','uncommon',6,()=>P.explodeMul*=1.3),
-  U('Ability Surge','+25% ability power','≡ƒö«','uncommon',6,()=>P.abilityMul*=1.25),
-  U('Arcane Battery','-20% ability cooldown','≡ƒö«','rare',4,()=>P.abilityCDmul=(P.abilityCDmul||1)*0.8),
-  U('Vampirism','+4% lifesteal','≡ƒ⌐╕','rare',4,()=>P.lifesteal+=0.04),
-  U('Spiked Hull','+8 thorns','≡ƒî╡','uncommon',5,()=>P.thorns+=8),
-  U('Armor Plate','+4 armor','≡ƒ¢í∩╕Å','common',7,()=>P.armor+=4),
-  U('Scholar','+20% XP gain','≡ƒôÿ','common',7,()=>P.xpMul*=1.2),
-  U('Lucky','+3 luck (loot)','≡ƒìÇ','uncommon',5,()=>P.luck+=3),
-  U('Deploy Drone','+1 combat drone','≡ƒ¢░∩╕Å','rare',5,()=>addDrone(pick(['mg','laser','missile']))),
-  U('Drone Overdrive','+30% drone damage','≡ƒ¢░∩╕Å','uncommon',5,()=>P.droneDmgMul*=1.3),
-  U('Tesla Coil','+1 lightning chain','≡ƒöî','uncommon',5,()=>P.statMods.chain=(P.statMods.chain||0)+1),
-  U('Overdrive Cells','longer L-click overdrive','≡ƒöÑ','uncommon',5,()=>P.odBonus=(P.odBonus||0)+0.6),
-  U('Full Repair','heal to full now','Γ£¿','common',6,()=>heal(P.maxhp)),
-  U('Glass Cannon','+50% dmg, -20 HP','Γÿá∩╕Å','epic',2,()=>{P.dmgMul*=1.5;P.maxhp=Math.max(40,P.maxhp-20);P.hp=Math.min(P.hp,P.maxhp);}),
-  U('Berserker','+25% dmg & rate when <40% HP','≡ƒÿí','legendary',1,()=>P.berserk=true),
-  U('Guardian','+8 armor, +50 HP','≡ƒ¢í∩╕Å','epic',2,()=>{P.armor+=8;P.maxhp+=50;P.hp+=50;}),
-  U('Phase Shift','+0.15s dash invuln','≡ƒîÇ','uncommon',5,()=>P.dashInv=(P.dashInv||0)+0.15),
+  U('Overclock','+15% damage','🗡️','common',10,()=>P.dmgMul*=1.15),
+  U('Power Core','+25% damage','🗡️','rare',5,()=>P.dmgMul*=1.25),
+  U('Singularity Rounds','+40% damage','💥','epic',2,()=>P.dmgMul*=1.4),
+  U('Trigger Mod','+15% fire rate','⚡','common',10,()=>P.fireRateMul*=1.15),
+  U('Hyper Trigger','+28% fire rate','⚡','rare',5,()=>P.fireRateMul*=1.28),
+  U('Sharp Optics','+7% crit chance','🎯','common',9,()=>P.crit=Math.min(0.9,P.crit+0.07)),
+  U('Assassin','+12% crit, +40% crit dmg','🎯','epic',3,()=>{P.crit=Math.min(0.9,P.crit+0.12);P.critDmg+=0.4;}),
+  U('Brutal Force','+35% crit damage','🔪','uncommon',6,()=>P.critDmg+=0.35),
+  U('Split Shot','+1 projectile','✳️','uncommon',6,()=>P.projAdd++),
+  U('Multishot','+2 projectiles','✳️','epic',2,()=>P.projAdd+=2),
+  U('Velocity','+22% projectile speed','🌠','common',8,()=>P.projSpeedMul*=1.22),
+  U('Piercing Tips','+1 pierce','📌','uncommon',6,()=>P.pierceAdd++),
+  U('Rail Spike','+2 pierce','📌','rare',3,()=>P.pierceAdd+=2),
+  U('Light Frame','+12% move speed','🏃','common',8,()=>P.moveMul*=1.12),
+  U('Servo Legs','+20% move speed','🏃','rare',4,()=>P.moveMul*=1.2),
+  U('Vitality','+30 max HP','❤️','common',9,()=>{P.maxhp+=30;P.hp+=30;}),
+  U('Titan Plating','+70 max HP','❤️','rare',4,()=>{P.maxhp+=70;P.hp+=70;}),
+  U('Nanoheal','+0.8 HP/sec regen','💚','common',8,()=>P.regen+=0.8),
+  U('Regrowth','+2 HP/sec regen','💚','epic',3,()=>P.regen+=2),
+  U('Magnet Field','+30% pickup range','🧲','common',8,()=>P.pickupBonus+=0.3),
+  U('Extra Dash','+1 dash charge','💨','rare',4,()=>{P.dashMax++;P.dashCharges++;}),
+  U('Kinetic Boots','-25% dash cooldown','💨','uncommon',5,()=>P.dashCDmul=(P.dashCDmul||1)*0.75),
+  U('Bigger Booms','+30% explosion radius','💣','uncommon',6,()=>P.explodeMul*=1.3),
+  U('Ability Surge','+25% ability power','🔮','uncommon',6,()=>P.abilityMul*=1.25),
+  U('Arcane Battery','-20% ability cooldown','🔮','rare',4,()=>P.abilityCDmul=(P.abilityCDmul||1)*0.8),
+  U('Vampirism','+4% lifesteal','🩸','rare',4,()=>P.lifesteal+=0.04),
+  U('Spiked Hull','+8 thorns','🌵','uncommon',5,()=>P.thorns+=8),
+  U('Armor Plate','+4 armor','🛡️','common',7,()=>P.armor+=4),
+  U('Scholar','+20% XP gain','📘','common',7,()=>P.xpMul*=1.2),
+  U('Lucky','+3 luck (loot)','🍀','uncommon',5,()=>P.luck+=3),
+  U('Deploy Drone','+1 combat drone','🛰️','rare',5,()=>addDrone(pick(['mg','laser','missile']))),
+  U('Drone Overdrive','+30% drone damage','🛰️','uncommon',5,()=>P.droneDmgMul*=1.3),
+  U('Tesla Coil','+1 lightning chain','🔌','uncommon',5,()=>P.statMods.chain=(P.statMods.chain||0)+1),
+  U('Overdrive Cells','longer L-click overdrive','🔥','uncommon',5,()=>P.odBonus=(P.odBonus||0)+0.6),
+  U('Full Repair','heal to full now','✨','common',6,()=>heal(P.maxhp)),
+  U('Glass Cannon','+50% dmg, -20 HP','☠️','epic',2,()=>{P.dmgMul*=1.5;P.maxhp=Math.max(40,P.maxhp-20);P.hp=Math.min(P.hp,P.maxhp);}),
+  U('Berserker','+25% dmg & rate when <40% HP','😡','legendary',1,()=>P.berserk=true),
+  U('Guardian','+8 armor, +50 HP','🛡️','epic',2,()=>{P.armor+=8;P.maxhp+=50;P.hp+=50;}),
+  U('Phase Shift','+0.15s dash invuln','🌀','uncommon',5,()=>P.dashInv=(P.dashInv||0)+0.15),
   // weapon unlocks
-  U('Unlock: SHOTGUN','add shotgun to arsenal','≡ƒö½','rare',4,()=>unlockWeapon(1)),
-  U('Unlock: SMG','add SMG to arsenal','≡ƒö½','rare',4,()=>unlockWeapon(2)),
-  U('Unlock: MINIGUN','add minigun','≡ƒö½','rare',4,()=>unlockWeapon(3)),
-  U('Unlock: RAILGUN','add railgun','≡ƒö½','epic',3,()=>unlockWeapon(4)),
-  U('Unlock: SNIPER','add sniper','≡ƒö½','epic',3,()=>unlockWeapon(5)),
-  U('Unlock: LASER RIFLE','add laser rifle','≡ƒö½','epic',3,()=>unlockWeapon(6)),
-  U('Unlock: PLASMA','add plasma cannon','≡ƒö½','epic',3,()=>unlockWeapon(7)),
-  U('Unlock: ROCKET','add rocket launcher','≡ƒö½','epic',3,()=>unlockWeapon(8)),
-  U('Unlock: LIGHTNING','add lightning gun','≡ƒö½','epic',3,()=>unlockWeapon(9)),
-  U('Unlock: FLAME','add flamethrower','≡ƒö½','epic',3,()=>unlockWeapon(10)),
-  U('Crit Engine','+5% crit, +15% dmg','≡ƒÄ»','rare',4,()=>{P.crit=Math.min(0.9,P.crit+0.05);P.dmgMul*=1.15;}),
-  U('Swift Reload','+18% fire rate','ΓÜí','uncommon',6,()=>P.fireRateMul*=1.18),
-  U('Heavy Rounds','+18% dmg, -8% rate','≡ƒùí∩╕Å','uncommon',4,()=>{P.dmgMul*=1.18;P.fireRateMul*=0.92;}),
-  U('Adrenaline','+10% move & rate','≡ƒÅâ','rare',4,()=>{P.moveMul*=1.1;P.fireRateMul*=1.1;}),
-  U('Second Wind','+1.5 regen, +30 HP','≡ƒÆÜ','rare',3,()=>{P.regen+=1.5;P.maxhp+=30;P.hp+=30;}),
+  U('Unlock: SHOTGUN','add shotgun to arsenal','🔫','rare',4,()=>unlockWeapon(1)),
+  U('Unlock: SMG','add SMG to arsenal','🔫','rare',4,()=>unlockWeapon(2)),
+  U('Unlock: MINIGUN','add minigun','🔫','rare',4,()=>unlockWeapon(3)),
+  U('Unlock: RAILGUN','add railgun','🔫','epic',3,()=>unlockWeapon(4)),
+  U('Unlock: SNIPER','add sniper','🔫','epic',3,()=>unlockWeapon(5)),
+  U('Unlock: LASER RIFLE','add laser rifle','🔫','epic',3,()=>unlockWeapon(6)),
+  U('Unlock: PLASMA','add plasma cannon','🔫','epic',3,()=>unlockWeapon(7)),
+  U('Unlock: ROCKET','add rocket launcher','🔫','epic',3,()=>unlockWeapon(8)),
+  U('Unlock: LIGHTNING','add lightning gun','🔫','epic',3,()=>unlockWeapon(9)),
+  U('Unlock: FLAME','add flamethrower','🔫','epic',3,()=>unlockWeapon(10)),
+  U('Crit Engine','+5% crit, +15% dmg','🎯','rare',4,()=>{P.crit=Math.min(0.9,P.crit+0.05);P.dmgMul*=1.15;}),
+  U('Swift Reload','+18% fire rate','⚡','uncommon',6,()=>P.fireRateMul*=1.18),
+  U('Heavy Rounds','+18% dmg, -8% rate','🗡️','uncommon',4,()=>{P.dmgMul*=1.18;P.fireRateMul*=0.92;}),
+  U('Adrenaline','+10% move & rate','🏃','rare',4,()=>{P.moveMul*=1.1;P.fireRateMul*=1.1;}),
+  U('Second Wind','+1.5 regen, +30 HP','💚','rare',3,()=>{P.regen+=1.5;P.maxhp+=30;P.hp+=30;}),
 ];
 function unlockWeapon(i){if(!P.unlocked.includes(i)){P.unlocked.push(i);P.unlocked.sort((a,b)=>a-b);P.weapon=i;notify('NEW WEAPON: '+WEAPONS[i].name,'var(--cyan)');updateWeaponUI();}else{P.dmgMul*=1.1;}}
 
@@ -1728,17 +1725,17 @@ function applyLoot(l){
 function hex3(h){const n=parseInt(h.slice(1),16);return [(n>>16&255)/255,(n>>8&255)/255,(n&255)/255];}
 function showLootPopup(name,color,desc){
   const a=document.createElement('div');a.className='ach';a.style.borderColor=color;
-  a.innerHTML=`<div class="ai">≡ƒÆÄ</div><div><div class="at" style="color:${color}">LOOT ACQUIRED</div>
+  a.innerHTML=`<div class="ai">💎</div><div><div class="at" style="color:${color}">LOOT ACQUIRED</div>
     <div class="an" style="color:${color}">${name}</div><div class="ad">${desc}</div></div>`;
   document.getElementById('achv').appendChild(a);setTimeout(()=>a.remove(),4200);
 }
 
 /* =========================== DRONES (4 types) =========================== */
 const DRONE_TYPES={
-  mg:{name:'MG Drone',icon:'≡ƒö½',col:[1,0.9,0.3],cd:0.45,range:760,mesh:'cube'},
-  laser:{name:'Laser Drone',icon:'≡ƒö║',col:[1,0.3,0.9],cd:0.5,range:680,mesh:'pyramid'},
-  heal:{name:'Heal Drone',icon:'Γ₧ò',col:[0.3,1,0.6],cd:1.1,range:0,mesh:'diamond'},
-  missile:{name:'Missile Drone',icon:'≡ƒÜÇ',col:[1,0.5,0.2],cd:1.6,range:1000,mesh:'cube'},
+  mg:{name:'MG Drone',icon:'🔫',col:[1,0.9,0.3],cd:0.45,range:760,mesh:'cube'},
+  laser:{name:'Laser Drone',icon:'🔺',col:[1,0.3,0.9],cd:0.5,range:680,mesh:'pyramid'},
+  heal:{name:'Heal Drone',icon:'➕',col:[0.3,1,0.6],cd:1.1,range:0,mesh:'diamond'},
+  missile:{name:'Missile Drone',icon:'🚀',col:[1,0.5,0.2],cd:1.6,range:1000,mesh:'cube'},
 };
 function addDrone(typeKey){
   if(drones.length>=8){P.droneDmgMul*=1.2;return;}
@@ -1789,26 +1786,26 @@ function updateBeams(dt){for(let i=beams.length-1;i>=0;i--){beams[i].life-=dt;if
 
 /* =========================== ABILITIES (9) =========================== */
 const ABILITIES=[
-  {name:'Dash',icon:'≡ƒÆ¿',cd:1.2,fn:()=>doDash(true)},
-  {name:'Missiles',icon:'≡ƒÜÇ',cd:7,fn:()=>{Audio.ability();for(let i=0;i<8;i++){const tgt=Grid.nearest(P.x+rand(-300,300),P.z+rand(-300,300),1400);
+  {name:'Dash',icon:'💨',cd:1.2,fn:()=>doDash(true)},
+  {name:'Missiles',icon:'🚀',cd:7,fn:()=>{Audio.ability();for(let i=0;i<8;i++){const tgt=Grid.nearest(P.x+rand(-300,300),P.z+rand(-300,300),1400);
     const a=tgt?Math.atan2(tgt.z-P.z,tgt.x-P.x):rand(0,TWO_PI);const b=bGet();b.x=P.x;b.z=P.z;b.y=30;
     b.vx=Math.cos(a)*600;b.vz=Math.sin(a)*600;b.ang=a;b.life=2.6;b.dmg=40*P.abilityMul;b.size=14;b.r=1;b.g=0.5;b.b=0.2;
     b.behavior='rocket';b.pierce=0;b.explodeR=160*P.explodeMul;b.hit.clear();b.crit=false;b.trailT=0;b.homing=3.5;bullets.push(b);}}},
-  {name:'Shockwave',icon:'≡ƒîè',cd:6,fn:()=>{Audio.ability();explode(P.x,P.z,360,70*P.abilityMul,0.4,0.9,1);
+  {name:'Shockwave',icon:'🌊',cd:6,fn:()=>{Audio.ability();explode(P.x,P.z,360,70*P.abilityMul,0.4,0.9,1);
     Grid.query(P.x,P.z,360,e=>{if(!e.dead){const a=Math.atan2(e.z-P.z,e.x-P.x);e.x+=Math.cos(a)*120;e.z+=Math.sin(a)*120;}});}},
-  {name:'Heal',icon:'Γ₧ò',cd:14,fn:()=>{Audio.ability();heal(P.maxhp*0.35);P.regenAcc=0;P.invuln=Math.max(P.invuln,0.6);
+  {name:'Heal',icon:'➕',cd:14,fn:()=>{Audio.ability();heal(P.maxhp*0.35);P.regenAcc=0;P.invuln=Math.max(P.invuln,0.6);
     for(let i=0;i<24;i++){const a=rand(0,TWO_PI);spawnParticle(P.x,P.z,30,Math.cos(a)*150,rand(120,320),Math.sin(a)*150,0.7,10,0.3,1,0.6,'diamond');}flashMsg('+HEAL','#43ff9e');}},
-  {name:'Laser',icon:'ΓÜí',cd:8,fn:()=>{Audio.ability();const ax=Math.cos(P.angle),az=Math.sin(P.angle);
+  {name:'Laser',icon:'⚡',cd:8,fn:()=>{Audio.ability();const ax=Math.cos(P.angle),az=Math.sin(P.angle);
     beams.push({x:P.x,z:P.z,ax,az,range:2200,wd:70,r:1,g:0.2,b:0.5,life:0.5,max:0.5,big:true});
     Grid.query(P.x+ax*1100,P.z+az*1100,2200,e=>{if(e.dead)return;const rx=e.x-P.x,rz=e.z-P.z;const proj=rx*ax+rz*az;
       if(proj<0||proj>2200)return;const perp=Math.abs(rx*az-rz*ax);if(perp<70+e.radius)damageEnemy(e,150*P.abilityMul,true,ax,az,80);});
     G.shake=Math.min(G.shake+16,32);}},
-  {name:'Drones',icon:'≡ƒ¢░∩╕Å',cd:20,fn:()=>{Audio.ability();const types=['mg','laser','missile'];for(let i=0;i<3;i++){addTempDrone(pick(types));}flashMsg('DRONE SWARM','#43ff9e');}},
-  {name:'Time Slow',icon:'ΓÅ│',cd:16,fn:()=>{Audio.ability();G.enemySlow=0.3;G.enemySlowT=4*P.abilityMul;flashMsg('TIME SLOW','#9b5cff');}},
-  {name:'Black Hole',icon:'≡ƒò│∩╕Å',cd:18,fn:()=>{Audio.ability();const gx=P.x+Math.cos(P.angle)*400,gz=P.z+Math.sin(P.angle)*400;
+  {name:'Drones',icon:'🛰️',cd:20,fn:()=>{Audio.ability();const types=['mg','laser','missile'];for(let i=0;i<3;i++){addTempDrone(pick(types));}flashMsg('DRONE SWARM','#43ff9e');}},
+  {name:'Time Slow',icon:'⏳',cd:16,fn:()=>{Audio.ability();G.enemySlow=0.3;G.enemySlowT=4*P.abilityMul;flashMsg('TIME SLOW','#9b5cff');}},
+  {name:'Black Hole',icon:'🕳️',cd:18,fn:()=>{Audio.ability();const gx=P.x+Math.cos(P.angle)*400,gz=P.z+Math.sin(P.angle)*400;
     hazards.push({x:gx,z:gz,r:30,max:420,life:3.2,maxlife:3.2,dmg:14*P.abilityMul,type:'blackhole',r0:0.6,g0:0.3,b0:1,tick:0});
     rings.push({x:gx,z:gz,r:10,max:420,life:0.6,maxlife:0.6,r0:0.6,g0:0.3,b0:1});flashMsg('BLACK HOLE','#9b5cff');}},
-  {name:'Orbital',icon:'Γÿä∩╕Å',cd:15,fn:()=>{Audio.ability();flashMsg('ORBITAL STRIKE','#ffe24a');
+  {name:'Orbital',icon:'☄️',cd:15,fn:()=>{Audio.ability();flashMsg('ORBITAL STRIKE','#ffe24a');
     for(let i=0;i<10;i++){const tgt=enemies[randi(0,Math.max(0,enemies.length-1))];
       const tx=tgt?tgt.x:P.x+rand(-500,500),tz=tgt?tgt.z:P.z+rand(-500,500);
       setTimeout(()=>{if(G.running)explode(tx,tz,200,90*P.abilityMul,1,0.8,0.2);},i*120);}}},
@@ -1839,27 +1836,27 @@ function doDash(fromAbility){
 
 /* =========================== SKILL TREE =========================== */
 const TREE=[
-  {id:'root',x:50,y:50,b:'u',icon:'Γùå',name:'CORE',cost:0,req:[],owned:true,apply:()=>{}},
+  {id:'root',x:50,y:50,b:'u',icon:'◆',name:'CORE',cost:0,req:[],owned:true,apply:()=>{}},
   // offense up
-  {id:'o1',x:50,y:39,b:'o',icon:'≡ƒùí∩╕Å',name:'+15% DMG',cost:1,req:['root'],apply:()=>P.dmgMul*=1.15},
-  {id:'o2',x:50,y:28,b:'o',icon:'≡ƒÄ»',name:'+8% CRIT',cost:1,req:['o1'],apply:()=>P.crit=Math.min(0.9,P.crit+0.08)},
-  {id:'o3',x:50,y:17,b:'o',icon:'Γ£│∩╕Å',name:'+1 PROJ',cost:2,req:['o2'],apply:()=>P.projAdd++},
-  {id:'o4',x:50,y:7,b:'o',icon:'≡ƒÆÑ',name:'+40% DMG',cost:3,req:['o3'],apply:()=>P.dmgMul*=1.4},
+  {id:'o1',x:50,y:39,b:'o',icon:'🗡️',name:'+15% DMG',cost:1,req:['root'],apply:()=>P.dmgMul*=1.15},
+  {id:'o2',x:50,y:28,b:'o',icon:'🎯',name:'+8% CRIT',cost:1,req:['o1'],apply:()=>P.crit=Math.min(0.9,P.crit+0.08)},
+  {id:'o3',x:50,y:17,b:'o',icon:'✳️',name:'+1 PROJ',cost:2,req:['o2'],apply:()=>P.projAdd++},
+  {id:'o4',x:50,y:7,b:'o',icon:'💥',name:'+40% DMG',cost:3,req:['o3'],apply:()=>P.dmgMul*=1.4},
   // defense right
-  {id:'d1',x:62,y:50,b:'d',icon:'Γ¥ñ∩╕Å',name:'+60 HP',cost:1,req:['root'],apply:()=>{P.maxhp+=60;P.hp+=60;}},
-  {id:'d2',x:74,y:50,b:'d',icon:'≡ƒ¢í∩╕Å',name:'+5 ARMOR',cost:1,req:['d1'],apply:()=>P.armor+=5},
-  {id:'d3',x:86,y:50,b:'d',icon:'≡ƒÆÜ',name:'+1.5 REGEN',cost:2,req:['d2'],apply:()=>P.regen+=1.5},
-  {id:'d4',x:95,y:50,b:'d',icon:'≡ƒ⌐╕',name:'+6% LIFESTEAL',cost:3,req:['d3'],apply:()=>P.lifesteal+=0.06},
+  {id:'d1',x:62,y:50,b:'d',icon:'❤️',name:'+60 HP',cost:1,req:['root'],apply:()=>{P.maxhp+=60;P.hp+=60;}},
+  {id:'d2',x:74,y:50,b:'d',icon:'🛡️',name:'+5 ARMOR',cost:1,req:['d1'],apply:()=>P.armor+=5},
+  {id:'d3',x:86,y:50,b:'d',icon:'💚',name:'+1.5 REGEN',cost:2,req:['d2'],apply:()=>P.regen+=1.5},
+  {id:'d4',x:95,y:50,b:'d',icon:'🩸',name:'+6% LIFESTEAL',cost:3,req:['d3'],apply:()=>P.lifesteal+=0.06},
   // utility down
-  {id:'u1',x:50,y:61,b:'t',icon:'≡ƒÅâ',name:'+12% SPEED',cost:1,req:['root'],apply:()=>P.moveMul*=1.12},
-  {id:'u2',x:50,y:72,b:'t',icon:'≡ƒº▓',name:'+30% PICKUP',cost:1,req:['u1'],apply:()=>P.pickupBonus+=0.3},
-  {id:'u3',x:50,y:83,b:'t',icon:'≡ƒôÿ',name:'+20% XP',cost:2,req:['u2'],apply:()=>P.xpMul*=1.2},
-  {id:'u4',x:50,y:93,b:'t',icon:'≡ƒö«',name:'-20% ABILITY CD',cost:3,req:['u3'],apply:()=>P.abilityCDmul=(P.abilityCDmul||1)*0.8},
+  {id:'u1',x:50,y:61,b:'t',icon:'🏃',name:'+12% SPEED',cost:1,req:['root'],apply:()=>P.moveMul*=1.12},
+  {id:'u2',x:50,y:72,b:'t',icon:'🧲',name:'+30% PICKUP',cost:1,req:['u1'],apply:()=>P.pickupBonus+=0.3},
+  {id:'u3',x:50,y:83,b:'t',icon:'📘',name:'+20% XP',cost:2,req:['u2'],apply:()=>P.xpMul*=1.2},
+  {id:'u4',x:50,y:93,b:'t',icon:'🔮',name:'-20% ABILITY CD',cost:3,req:['u3'],apply:()=>P.abilityCDmul=(P.abilityCDmul||1)*0.8},
   // summoner left
-  {id:'s1',x:38,y:50,b:'s',icon:'≡ƒ¢░∩╕Å',name:'+1 DRONE',cost:1,req:['root'],apply:()=>addDrone('mg')},
-  {id:'s2',x:26,y:50,b:'s',icon:'ΓÜÖ∩╕Å',name:'+30% DRONE DMG',cost:1,req:['s1'],apply:()=>P.droneDmgMul*=1.3},
-  {id:'s3',x:14,y:50,b:'s',icon:'≡ƒö║',name:'+1 LASER DRONE',cost:2,req:['s2'],apply:()=>addDrone('laser')},
-  {id:'s4',x:5,y:50,b:'s',icon:'≡ƒÜÇ',name:'+MISSILE DRONE',cost:3,req:['s3'],apply:()=>{addDrone('missile');P.droneDmgMul*=1.5;}},
+  {id:'s1',x:38,y:50,b:'s',icon:'🛰️',name:'+1 DRONE',cost:1,req:['root'],apply:()=>addDrone('mg')},
+  {id:'s2',x:26,y:50,b:'s',icon:'⚙️',name:'+30% DRONE DMG',cost:1,req:['s1'],apply:()=>P.droneDmgMul*=1.3},
+  {id:'s3',x:14,y:50,b:'s',icon:'🔺',name:'+1 LASER DRONE',cost:2,req:['s2'],apply:()=>addDrone('laser')},
+  {id:'s4',x:5,y:50,b:'s',icon:'🚀',name:'+MISSILE DRONE',cost:3,req:['s3'],apply:()=>{addDrone('missile');P.droneDmgMul*=1.5;}},
 ];
 const BRANCH_COL={o:'#ff3b5c',d:'#22e6ff',t:'#ffe24a',s:'#43ff9e',u:'#dfe9ff'};
 function nodeById(id){return TREE.find(n=>n.id===id);}
@@ -1890,32 +1887,32 @@ const ACH_DONE={};
 const ACH=[];
 (function buildAch(){
   const A=(id,name,desc,icon,cond)=>ACH.push({id,name,desc,icon,cond});
-  [10,50,100,250,500,1000,2500,5000,10000].forEach(k=>A('k'+k,'Slayer '+k,'Kill '+k+' enemies','≡ƒÆÇ',()=>G.kills>=k));
-  [5,10,20,30,50,75].forEach(l=>A('l'+l,'Level '+l,'Reach level '+l,'Γ¼å∩╕Å',()=>P.level>=l));
-  [3,5,10,15,25].forEach(w=>A('w'+w,'Wave '+w,'Reach wave '+w,'≡ƒîè',()=>G.wave>=w));
-  [1,2,3,5,10,20].forEach(b=>A('b'+b,'Boss x'+b,'Defeat '+b+' bosses','≡ƒæ╣',()=>G.bossesKilled>=b));
-  [60,180,300,600,900,1200].forEach(t=>A('t'+t,'Survive '+Math.floor(t/60)+'m','Survive '+Math.floor(t/60)+' minutes','ΓÅ▒∩╕Å',()=>G.gameTime>=t));
-  A('first','First Blood','Kill your first enemy','≡ƒ⌐╕',()=>G.kills>=1);
-  A('rich','Hoarder','Reach level 15','≡ƒÆ░',()=>P.level>=15);
-  A('arsenal','Arsenal','Unlock 5 weapons','≡ƒö½',()=>P.unlocked.length>=5);
-  A('fullarsenal','Gunsmith','Unlock all 11 weapons','≡ƒ¢á∩╕Å',()=>P.unlocked.length>=11);
-  A('drones3','Swarm','Field 3 drones','≡ƒ¢░∩╕Å',()=>drones.length>=3);
-  A('drones6','Hive Mind','Field 6 drones','≡ƒÉ¥',()=>drones.length>=6);
-  A('tank','Tanky','Reach 300 max HP','Γ¥ñ∩╕Å',()=>P.maxhp>=300);
-  A('crit','Critical','Reach 40% crit','≡ƒÄ»',()=>P.crit>=0.4);
-  A('glass','Glass Cannon','Reach 3x damage','≡ƒÆÑ',()=>P.dmgMul>=3);
-  A('speed','Speedster','Reach 1.5x move speed','≡ƒÅâ',()=>P.moveMul>=1.5);
-  A('loot','Treasure','Collect 10 loot','≡ƒÆÄ',()=>G._loot>=10);
-  A('mythic','Mythic Find','Collect a mythic item','≡ƒîƒ',()=>G._mythic>=1);
-  A('skill','Tactician','Spend 5 skill points','≡ƒºá',()=>G._spentSP>=5);
-  A('skillful','Mastermind','Spend 12 skill points','≡ƒºá',()=>G._spentSP>=12);
-  A('abilities','Multitasker','Use 50 abilities','Γ£¿',()=>G._abUses>=50);
-  A('combo','Overkill','Reach 250 kills in one run','≡ƒöÑ',()=>G.kills>=250);
-  A('survivor','Endurance','Survive 5 minutes','≡ƒ¢í∩╕Å',()=>G.gameTime>=300);
-  A('hp1','Untouchable','Survive 1m without dying','≡ƒòè∩╕Å',()=>G.gameTime>=60);
-  A('boss5fast','Boss Hunter','Beat 5 bosses','ΓÜö∩╕Å',()=>G.bossesKilled>=5);
-  A('lvmax','Ascended','Reach level 40','≡ƒææ',()=>P.level>=40);
-  A('rich2','Big Spender','Spend all on tree','≡ƒî│',()=>TREE.every(n=>n.owned));
+  [10,50,100,250,500,1000,2500,5000,10000].forEach(k=>A('k'+k,'Slayer '+k,'Kill '+k+' enemies','💀',()=>G.kills>=k));
+  [5,10,20,30,50,75].forEach(l=>A('l'+l,'Level '+l,'Reach level '+l,'⬆️',()=>P.level>=l));
+  [3,5,10,15,25].forEach(w=>A('w'+w,'Wave '+w,'Reach wave '+w,'🌊',()=>G.wave>=w));
+  [1,2,3,5,10,20].forEach(b=>A('b'+b,'Boss x'+b,'Defeat '+b+' bosses','👹',()=>G.bossesKilled>=b));
+  [60,180,300,600,900,1200].forEach(t=>A('t'+t,'Survive '+Math.floor(t/60)+'m','Survive '+Math.floor(t/60)+' minutes','⏱️',()=>G.gameTime>=t));
+  A('first','First Blood','Kill your first enemy','🩸',()=>G.kills>=1);
+  A('rich','Hoarder','Reach level 15','💰',()=>P.level>=15);
+  A('arsenal','Arsenal','Unlock 5 weapons','🔫',()=>P.unlocked.length>=5);
+  A('fullarsenal','Gunsmith','Unlock all 11 weapons','🛠️',()=>P.unlocked.length>=11);
+  A('drones3','Swarm','Field 3 drones','🛰️',()=>drones.length>=3);
+  A('drones6','Hive Mind','Field 6 drones','🐝',()=>drones.length>=6);
+  A('tank','Tanky','Reach 300 max HP','❤️',()=>P.maxhp>=300);
+  A('crit','Critical','Reach 40% crit','🎯',()=>P.crit>=0.4);
+  A('glass','Glass Cannon','Reach 3x damage','💥',()=>P.dmgMul>=3);
+  A('speed','Speedster','Reach 1.5x move speed','🏃',()=>P.moveMul>=1.5);
+  A('loot','Treasure','Collect 10 loot','💎',()=>G._loot>=10);
+  A('mythic','Mythic Find','Collect a mythic item','🌟',()=>G._mythic>=1);
+  A('skill','Tactician','Spend 5 skill points','🧠',()=>G._spentSP>=5);
+  A('skillful','Mastermind','Spend 12 skill points','🧠',()=>G._spentSP>=12);
+  A('abilities','Multitasker','Use 50 abilities','✨',()=>G._abUses>=50);
+  A('combo','Overkill','Reach 250 kills in one run','🔥',()=>G.kills>=250);
+  A('survivor','Endurance','Survive 5 minutes','🛡️',()=>G.gameTime>=300);
+  A('hp1','Untouchable','Survive 1m without dying','🕊️',()=>G.gameTime>=60);
+  A('boss5fast','Boss Hunter','Beat 5 bosses','⚔️',()=>G.bossesKilled>=5);
+  A('lvmax','Ascended','Reach level 40','👑',()=>P.level>=40);
+  A('rich2','Big Spender','Spend all on tree','🌳',()=>TREE.every(n=>n.owned));
 })();
 function checkAch(){
   for(const a of ACH){if(ACH_DONE[a.id])continue;try{if(a.cond()){ACH_DONE[a.id]=1;popAch(a);}}catch(e){}}
@@ -1930,15 +1927,15 @@ function popAch(a){
 
 /* =========================== HUD =========================== */
 function updateWeaponUI(){const w=curWeapon();document.getElementById('wname').textContent=w.name;
-  document.getElementById('wdesc').textContent=w.desc+' ΓÇó Q/E swap ('+P.unlocked.length+')';}
+  document.getElementById('wdesc').textContent=w.desc+' • Q/E swap ('+P.unlocked.length+')';}
 function updateLoadout(){
   const el=document.getElementById('loadout');let h='';
-  h+=`<div class="chip" style="border-color:#22e6ff">ΓÜö ${WEAPONS[P.weapon].name}</div>`;
-  if(drones.length)h+=`<div class="chip" style="border-color:#43ff9e">≡ƒ¢░ Drones ├ù${drones.length}</div>`;
-  if(P.relics&&P.relics.length)h+=`<div class="chip" style="border-color:#b15cff">≡ƒö« Relics ├ù${P.relics.length}</div>`;
+  h+=`<div class="chip" style="border-color:#22e6ff">⚔ ${WEAPONS[P.weapon].name}</div>`;
+  if(drones.length)h+=`<div class="chip" style="border-color:#43ff9e">🛰 Drones ×${drones.length}</div>`;
+  if(P.relics&&P.relics.length)h+=`<div class="chip" style="border-color:#b15cff">🔮 Relics ×${P.relics.length}</div>`;
   const m=window.Meta&&Meta.data.weaponMastery[String(P.weapon)];
-  if(m&&m.level>1)h+=`<div class="chip" style="border-color:#ffe24a">Γÿà Mastery Lv${m.level}</div>`;
-  h+=`<div class="chip">DMG ${Math.round(P.dmgMul*100)}% ┬╖ RATE ${Math.round(P.fireRateMul*100)}%</div>`;
+  if(m&&m.level>1)h+=`<div class="chip" style="border-color:#ffe24a">★ Mastery Lv${m.level}</div>`;
+  h+=`<div class="chip">DMG ${Math.round(P.dmgMul*100)}% · RATE ${Math.round(P.fireRateMul*100)}%</div>`;
   el.innerHTML=h;
 }
 function buildAbilityBar(){
@@ -2103,7 +2100,7 @@ function startGame(mode){
 }
 
 /* ============================================================================
-   RECONNECTED TAIL ΓÇö loop, renderer bridge, menus, local co-op, clear data.
+   RECONNECTED TAIL — loop, renderer bridge, menus, local co-op, clear data.
    (Reconstructs the section truncated during a prior session.)
    ============================================================================ */
 
@@ -2118,7 +2115,7 @@ function gameOver(){
     refreshMetaUI();
   }
   const s=document.getElementById('goStats');
-  if(s)s.innerHTML='<div style="color:var(--mag);font-size:20px;font-weight:900">'+G.mode.toUpperCase()+' ΓÇö RUN OVER</div>'+
+  if(s)s.innerHTML='<div style="color:var(--mag);font-size:20px;font-weight:900">'+G.mode.toUpperCase()+' — RUN OVER</div>'+
     'Time '+fmtTime(G.gameTime)+' &middot; LV '+P.level+' &middot; Wave '+G.wave+'<br>'+
     'Kills '+G.kills+' &middot; Bosses '+G.bossesKilled+' &middot; Score '+G.score+'<br>'+
     '<span style="color:var(--yel)">+'+earned+' CREDITS</span>';
@@ -2149,8 +2146,6 @@ function paintCooldowns(){
       a._el.style.background='conic-gradient(rgba(2,3,12,.84) '+deg+'deg, rgba(22,16,46,.92) '+deg+'deg)';}
     else a._el.style.background='rgba(22,16,46,.92)';}
 }
-
-/* ======================= LOCAL CO-OP (Player 2) ======================= */
 
 /* ======================= ONLINE MULTIPLAYER (Supabase Realtime) ======================= */
 const SUPABASE_URL=window.__SUPABASE_URL||'https://auimjkjgzscplvvpunxb.supabase.co';
@@ -2272,6 +2267,7 @@ function drawRemotePlayers(){
   }
 }
 
+/* ======================= LOCAL CO-OP (Player 2) ======================= */
 const Coop={active:false};
 const P2={x:0,z:0,vx:0,vz:0,y:26,hp:100,maxhp:100,radius:24,angle:0,fireCD:0,weapon:2,
   dmgMul:1,downed:false,reviveT:0,invuln:0,dashT:0,dashCD:0};
@@ -2285,13 +2281,13 @@ function toggleCoop(){
 function hurtP2(dmg){
   if(P2.invuln>0||P2.downed||G.over)return;
   P2.hp-=Math.max(1,dmg-2);P2.invuln=0.4;G.shake=Math.min(G.shake+6,24);
-  if(P2.hp<=0){P2.hp=0;P2.downed=true;flashMsg('P2 DOWNED','#ff3b5c');notify('PLAYER 2 DOWN ΓÇö REVIVE!','var(--red)');
+  if(P2.hp<=0){P2.hp=0;P2.downed=true;flashMsg('P2 DOWNED','#ff3b5c');notify('PLAYER 2 DOWN — REVIVE!','var(--red)');
     if(P.downed)gameOver();}
   updateCoopHUD();
 }
 function onPlayerDown(){            // P1 hp hit 0
   if(Coop.active&&!P2.downed){P.downed=true;P.hp=0;P.invuln=999;
-    flashMsg('YOU ARE DOWN ΓÇö P2 REVIVE!','#ff3b5c');notify('DOWNED ΓÇö teammate can revive','var(--red)');updateCoopHUD();}
+    flashMsg('YOU ARE DOWN — P2 REVIVE!','#ff3b5c');notify('DOWNED — teammate can revive','var(--red)');updateCoopHUD();}
   else gameOver();
 }
 function reviveP1(){P.downed=false;P.invuln=2;P.hp=P.maxhp*0.5;flashMsg('REVIVED','#43ff9e');notify('PLAYER 1 REVIVED','var(--grn)');updateCoopHUD();}
@@ -2363,7 +2359,7 @@ function buildShop(){
   (window.SHOP_ITEMS||[]).forEach(it=>{
     const owned=Meta.data.shopOwned.includes(it.id);
     const d=document.createElement('div');d.className='shopitem'+(owned?' owned':'');
-    d.innerHTML='<div style="font-weight:800">'+it.name+'</div><div class="cost">'+(owned?'OWNED':'ΓÜí '+it.cost)+'</div>';
+    d.innerHTML='<div style="font-weight:800">'+it.name+'</div><div class="cost">'+(owned?'OWNED':'⚡ '+it.cost)+'</div>';
     d.onclick=()=>{if(owned)return;if(Meta.buyShopItem(it.id)){Audio.ui();notify('Purchased: '+it.name,'var(--grn)');buildShop();}
       else{Audio.hit();notify('Not enough credits','var(--red)');}};
     g.appendChild(d);
@@ -2377,7 +2373,7 @@ function buildClasses(){
     const sel=Meta.data.classId===c.id;
     const d=document.createElement('div');d.className='shopitem'+(sel?' owned':'');d.style.borderColor=sel?'#22e6ff':'#555';
     d.innerHTML='<div style="font-size:22px">'+c.icon+'</div><div style="font-weight:800">'+c.name+'</div>'+
-      '<div style="font-size:11px;opacity:.7">'+c.desc+'</div><div class="cost">'+(owned?(sel?'EQUIPPED':'SELECT'):'ΓÜí '+c.cost)+'</div>';
+      '<div style="font-size:11px;opacity:.7">'+c.desc+'</div><div class="cost">'+(owned?(sel?'EQUIPPED':'SELECT'):'⚡ '+c.cost)+'</div>';
     d.onclick=()=>{
       if(owned){Meta.data.classId=c.id;Meta.save();Audio.ui();refreshMetaUI();buildClasses();}
       else if(Meta.spendCredits(c.cost)){Meta.data.classOwned.push(c.id);Meta.data.classId=c.id;Meta.save();
@@ -2391,15 +2387,15 @@ function buildDaily(){
   const l=document.getElementById('dailyList');if(!l||!window.Meta)return;Meta.ensureDaily();l.innerHTML='';
   Meta.data.dailyQuests.forEach(q=>{const prog=Meta.data.dailyProgress[q.id]||0;const done=prog>=q.target;
     const d=document.createElement('div');d.className='shopitem';d.style.cursor='default';
-    d.innerHTML='<div style="font-weight:800">'+q.name+(done?' Γ£à':'')+'</div>'+
+    d.innerHTML='<div style="font-weight:800">'+q.name+(done?' ✅':'')+'</div>'+
       '<div style="font-size:11px;opacity:.7">'+Math.min(prog,q.target)+' / '+q.target+'</div>'+
-      '<div class="cost">ΓÜí '+q.reward+'</div>';l.appendChild(d);});
+      '<div class="cost">⚡ '+q.reward+'</div>';l.appendChild(d);});
 }
 function buildChallenges(){
   const l=document.getElementById('challengeList');if(!l)return;l.innerHTML='';
   (window.CHALLENGES||[]).forEach(ch=>{const d=document.createElement('div');d.className='shopitem';
     d.innerHTML='<div style="font-weight:800;color:var(--mag)">'+ch.name+'</div><div style="font-size:11px;opacity:.75">'+ch.desc+'</div>'+
-      '<div class="cost" style="color:var(--cyan)">START RUN Γû╢</div>';
+      '<div class="cost" style="color:var(--cyan)">START RUN ▶</div>';
     d.onclick=()=>{pendingChallenge=ch;closeScreen('challenges');startGame('endless');};l.appendChild(d);});
 }
 /* black market (in-run) */
@@ -2419,7 +2415,7 @@ function maybeOfferRelic(){
   const pool=RELIC_POOL.filter(r=>!(Meta.data.relicsOwned||[]).includes(r.id)).sort(()=>Math.random()-0.5).slice(0,3);
   if(!pool.length){G.paused=false;return;}
   pool.forEach(r=>{const d=document.createElement('div');d.className='choice';d.style.borderColor='#b15cff';
-    d.innerHTML='<div class="ci">≡ƒö«</div><div class="cn">'+r.name+'</div><div class="cd">'+r.desc+'</div>';
+    d.innerHTML='<div class="ci">🔮</div><div class="cn">'+r.name+'</div><div class="cd">'+r.desc+'</div>';
     d.onclick=()=>{if(!Meta.data.relicsOwned)Meta.data.relicsOwned=[];Meta.data.relicsOwned.push(r.id);Meta.save();
       if(r.apply)r.apply(P);P.relics=P.relics||[];P.relics.push(r.id);Audio.ui();closeScreen('relicpick');G.paused=false;updateLoadout();};
     c.appendChild(d);});
@@ -2677,15 +2673,15 @@ function drawFX(){
   for(let i=0;i<dmgnums.length;i++){const d=dmgnums[i];const c=FX.project(d.x,d.z);if(!c)continue;const a=clamp(d.life/d.max,0,1);
     const y=c[1]-d.y*0.5;ctx.font='900 '+(d.crit?26:16)+'px Segoe UI,sans-serif';
     ctx.fillStyle=d.crit?'rgba(255,210,74,'+a+')':'rgba(255,255,255,'+a+')';ctx.lineWidth=3;ctx.strokeStyle='rgba(0,0,0,'+(a*0.7)+')';
-    const tx=d.crit?'Γ£ª'+d.v:''+d.v;ctx.strokeText(tx,c[0],y);ctx.fillText(tx,c[0],y);}
+    const tx=d.crit?'✦'+d.v:''+d.v;ctx.strokeText(tx,c[0],y);ctx.fillText(tx,c[0],y);}
   // black market marker
   if(window.World&&World.blackMarket){const c=FX.project(World.blackMarket.x,World.blackMarket.z);if(c){ctx.fillStyle='rgba(255,43,214,.9)';
-    ctx.font='900 14px Segoe UI';ctx.fillText('Γÿá MARKET (B)',c[0],c[1]-30);}}
+    ctx.font='900 14px Segoe UI';ctx.fillText('☠ MARKET (B)',c[0],c[1]-30);}}
   // co-op P2 marker
   if(Coop.active){const c=FX.project(P2.x,P2.z);if(c){
     ctx.strokeStyle=P2.downed?'#ff3b5c':'#43ff9e';ctx.lineWidth=2;ctx.beginPath();ctx.arc(c[0],c[1],P2.downed?22:16,0,TWO_PI);ctx.stroke();
     ctx.fillStyle=P2.downed?'#ff3b5c':'#43ff9e';ctx.font='900 12px Segoe UI';ctx.fillText(P2.downed?'REVIVE P2':'P2',c[0],c[1]-26);}}
-  if(P.downed){const c=FX.project(P.x,P.z);if(c){ctx.fillStyle='#ff3b5c';ctx.font='900 14px Segoe UI';ctx.fillText('DOWNED ΓÇö P2 REVIVE',c[0],c[1]-30);}}
+  if(P.downed){const c=FX.project(P.x,P.z);if(c){ctx.fillStyle='#ff3b5c';ctx.font='900 14px Segoe UI';ctx.fillText('DOWNED — P2 REVIVE',c[0],c[1]-30);}}
   // weather wash
   if(window.World&&World.weather&&World.weather.id!=='clear'){const t=World.weather.tint;
     ctx.fillStyle='rgba('+(t[0]*255|0)+','+(t[1]*255|0)+','+(t[2]*255|0)+',0.07)';ctx.fillRect(0,0,FX.W,FX.H);
@@ -2727,7 +2723,7 @@ function frame(ts){
   if(G.running&&!G.paused&&!G.over&&!G.levelOpen){update(dt);Net.sendState();}
   if(G.running||G.over)draw();
   if(G.running&&typeof updateHUD==='function')updateHUD();
-  const fc=document.getElementById('fpsc');if(fc)fc.textContent=Math.round(1/dt)+' FPS ┬╖ '+enemies.length+' enemies';
+  const fc=document.getElementById('fpsc');if(fc)fc.textContent=Math.round(1/dt)+' FPS · '+enemies.length+' enemies';
 }
 function wireUI(){
   const on=(id,fn)=>{const e=document.getElementById(id);if(e)e.onclick=fn;};
@@ -2740,7 +2736,7 @@ function wireUI(){
     if(Meta.canAscend()&&confirm('ASCEND? Resets prestige levels for a permanent global bonus.')){Meta.doAscend();notify('ASCENDED','var(--yel)');}
     else{const ok=Meta.doPrestige({gameTime:G.gameTime||0,level:P.level||1});if(ok)notify('PRESTIGE! +'+ok+' credits','var(--yel)');else notify('Need a run reaching LV20 or 5 min first','var(--red)');}
     refreshMetaUI();});
-  on('howBtn',()=>alert('NEON SURVIVOR ΓÇö THE VIRUS WAR\\n\\nP1: WASD move ┬╖ mouse aim ┬╖ auto-fire ┬╖ L-click overdrive ┬╖ Space dash ┬╖ 1-9 abilities ┬╖ Q/E weapon ┬╖ T skill tree ┬╖ Esc pause.\\nLOCAL CO-OP: press G during a run to add Player 2 (Arrow keys, auto-fire). Stand close to revive a downed teammate.\\nPress B at a Black Market to trade.\\n\\nEarn credits, buy unlocks in the SHOP, pick a CLASS, complete DAILIES, take on CHALLENGES, and PRESTIGE to grow permanently stronger. Progress saves automatically; CLEAR DATA wipes it.'));
+  on('howBtn',()=>alert('NEON SURVIVOR — THE VIRUS WAR\\n\\nP1: WASD move · mouse aim · auto-fire · L-click overdrive · Space dash · 1-9 abilities · Q/E weapon · T skill tree · Esc pause.\\nLOCAL CO-OP: press G during a run to add Player 2 (Arrow keys, auto-fire). Stand close to revive a downed teammate.\\nPress B at a Black Market to trade.\\n\\nEarn credits, buy unlocks in the SHOP, pick a CLASS, complete DAILIES, take on CHALLENGES, and PRESTIGE to grow permanently stronger. Progress saves automatically; CLEAR DATA wipes it.'));
   on('resumeBtn',()=>togglePause());
   on('treeBtn2',()=>{closeScreen('pause');renderTree();openScreen('skilltree');});
   on('quitBtn',()=>{G.running=false;G.over=false;G.paused=false;closeScreen('pause');openScreen('menu');refreshMetaUI();});
@@ -2791,56 +2787,56 @@ const ITEMS=[];
 function defItem(id,name,rar,icon,desc,fn){ITEMS.push({id,name,rar,icon,desc,fn});}
 
 /* ---- curated signature items (real, distinct effects) ---- */
-defItem('glassreactor','Glass Reactor','epic','≡ƒÆÑ','+45% damage, -20% max HP',p=>{p.dmgMul*=1.45;p.maxhp*=0.8;p.hp=Math.min(p.hp,p.maxhp);});
-defItem('soulstone','Soulstone','legendary','≡ƒÆÜ','Heal 4 HP on every kill',p=>{p.procs.onKillHeal+=4;});
-defItem('detonator','Detonation Core','rare','≡ƒº¿','Kills have a chance to explode',p=>{p.procs.onKillExplode+=1;});
-defItem('chaincap','Chain Capacitor','rare','≡ƒöù','Hits chain lightning to nearby foes',p=>{p.procs.chainHit+=1;});
-defItem('orbblades','Orbital Blades','epic','≡ƒîÇ','Summons orbiting blades',p=>{p.procs.orbitBlades+=2;});
-defItem('vampedge','Vampiric Edge','rare','≡ƒ⌐╕','+9% lifesteal',p=>{p.lifesteal+=0.09;});
-defItem('hyperboots','Hyperloop Boots','uncommon','≡ƒæƒ','+28% move speed',p=>{p.moveMul*=1.28;});
-defItem('nanoforge','Nano Forge','mythic','ΓÜÖ∩╕Å','+30% dmg, +20% rate, +8% crit',p=>{p.dmgMul*=1.3;p.fireRateMul*=1.2;p.crit=Math.min(0.95,p.crit+0.08);});
-defItem('singularity','Singularity Shard','ancient','≡ƒîî','+60% dmg, +1 projectile, kills explode',p=>{p.dmgMul*=1.6;p.projAdd+=1;p.procs.onKillExplode+=2;});
-defItem('berserkchip','Berserker Chip','epic','≡ƒÿí','+30% dmg & rate below 40% HP',p=>{p.berserk=true;p.dmgMul*=1.05;});
-defItem('titancore','Titan Core','legendary','≡ƒ¢í∩╕Å','+120 HP, +8 armor',p=>{p.maxhp+=120;p.hp+=120;p.armor+=8;});
-defItem('reactorheart','Reactor Heart','epic','Γ¥ñ∩╕ÅΓÇì≡ƒöÑ','+2.5 regen/s, +40 HP',p=>{p.regen+=2.5;p.maxhp+=40;p.hp+=40;});
-defItem('overclock','Overclock Module','rare','ΓÜí','+22% fire rate',p=>{p.fireRateMul*=1.22;});
-defItem('railspike','Rail Spikes','rare','≡ƒôî','+2 pierce',p=>{p.pierceAdd+=2;});
-defItem('splitcore','Split Core','epic','Γ£│∩╕Å','+1 projectile',p=>{p.projAdd+=1;});
-defItem('multicore','Multiplex Core','legendary','Γ£┤∩╕Å','+2 projectiles',p=>{p.projAdd+=2;});
-defItem('critlens','Assassin Lens','epic','≡ƒÄ»','+12% crit, +50% crit dmg',p=>{p.crit=Math.min(0.95,p.crit+0.12);p.critDmg+=0.5;});
-defItem('bigboom','Ordnance Pack','uncommon','≡ƒÆú','+35% explosion radius',p=>{p.explodeMul*=1.35;});
-defItem('dronehive','Drone Hive','rare','≡ƒ¢░∩╕Å','+40% drone damage',p=>{p.droneDmgMul*=1.4;});
-defItem('arcbattery','Arc Battery','rare','≡ƒö«','-22% ability cooldown',p=>{p.abilityCDmul=(p.abilityCDmul||1)*0.78;});
-defItem('voidcell','Void Cell','epic','≡ƒò│∩╕Å','+35% ability power',p=>{p.abilityMul*=1.35;});
-defItem('phasecoil','Phase Coil','rare','≡ƒÆ¿','+1 dash charge',p=>{p.dashMax++;p.dashCharges++;});
-defItem('magcore','Magnetar','uncommon','≡ƒº▓','+40% pickup range',p=>{p.pickupBonus+=0.4;});
-defItem('scholarchip','Scholar Chip','uncommon','≡ƒôÿ','+25% XP gain',p=>{p.xpMul*=1.25;});
-defItem('luckydie','Loaded Dice','uncommon','≡ƒìÇ','+4 luck',p=>{p.luck+=4;});
-defItem('spikehull','Spiked Hull','uncommon','≡ƒî╡','+12 thorns',p=>{p.thorns+=12;});
-defItem('aegis','Aegis Plate','rare','≡ƒ¬û','+6 armor, +30 HP',p=>{p.armor+=6;p.maxhp+=30;p.hp+=30;});
-defItem('velocity','Velocity Drive','common','≡ƒîá','+18% projectile speed',p=>{p.projSpeedMul*=1.18;});
-defItem('adrenal','Adrenal Surge','rare','≡ƒöÑ','+12% move & fire rate',p=>{p.moveMul*=1.12;p.fireRateMul*=1.12;});
-defItem('heavyrnd','Heavy Rounds','uncommon','≡ƒùí∩╕Å','+20% dmg, -8% rate',p=>{p.dmgMul*=1.2;p.fireRateMul*=0.92;});
-defItem('secondwind','Second Wind','rare','≡ƒî¼∩╕Å','+2 regen, +35 HP',p=>{p.regen+=2;p.maxhp+=35;p.hp+=35;});
-defItem('predator','Predator Optics','epic','≡ƒæü∩╕Å','+9% crit, +20% dmg',p=>{p.crit=Math.min(0.95,p.crit+0.09);p.dmgMul*=1.2;});
-defItem('warpdrive','Warp Drive','epic','≡ƒîÇ','+1 dash, +18% move, dash i-frames',p=>{p.dashMax++;p.dashCharges++;p.moveMul*=1.18;p.dashInv=(p.dashInv||0)+0.12;});
-defItem('reaper','Reaper Protocol','legendary','Γÿá∩╕Å','Kills heal & may explode',p=>{p.procs.onKillHeal+=3;p.procs.onKillExplode+=1;});
-defItem('stormcell','Storm Cell','legendary','≡ƒî⌐∩╕Å','Strong chain lightning on hit',p=>{p.procs.chainHit+=2;});
-defItem('bladestorm','Bladestorm','mythic','≡ƒîÇ','+4 orbiting blades',p=>{p.procs.orbitBlades+=4;});
-defItem('godcore','Omega Core','ancient','≡ƒö▒','+50% dmg, +30% rate, +6 orbit blades',p=>{p.dmgMul*=1.5;p.fireRateMul*=1.3;p.procs.orbitBlades+=6;});
-defItem('bloodpact','Blood Pact','mythic','≡ƒº¢','+15% lifesteal, +25% dmg, -25% HP',p=>{p.lifesteal+=0.15;p.dmgMul*=1.25;p.maxhp*=0.75;p.hp=Math.min(p.hp,p.maxhp);});
-defItem('fortress','Fortress Matrix','mythic','≡ƒÅ░','+150 HP, +12 armor, +15 thorns',p=>{p.maxhp+=150;p.hp+=150;p.armor+=12;p.thorns+=15;});
-defItem('quantumtether','Quantum Tether','legendary','≡ƒ¬ó','+2 projectiles, +1 pierce, +15% rate',p=>{p.projAdd+=2;p.pierceAdd+=1;p.fireRateMul*=1.15;});
-defItem('infinitymag','Infinity Mag','ancient','ΓÖ╛∩╕Å','+40% rate, +1 proj, -30% ability cd',p=>{p.fireRateMul*=1.4;p.projAdd+=1;p.abilityCDmul=(p.abilityCDmul||1)*0.7;});
-defItem('regenmatrix','Regen Matrix','epic','≡ƒÆù','+3 regen, heal on kill',p=>{p.regen+=3;p.procs.onKillHeal+=2;});
-defItem('powergrid','Power Grid','rare','≡ƒöî','+18% dmg, +10% ability power',p=>{p.dmgMul*=1.18;p.abilityMul*=1.1;});
-defItem('swiftkill','Swiftkill Engine','epic','≡ƒÅ╣','+1 proj, +12% rate, +6% crit',p=>{p.projAdd+=1;p.fireRateMul*=1.12;p.crit=Math.min(0.95,p.crit+0.06);});
+defItem('glassreactor','Glass Reactor','epic','💥','+45% damage, -20% max HP',p=>{p.dmgMul*=1.45;p.maxhp*=0.8;p.hp=Math.min(p.hp,p.maxhp);});
+defItem('soulstone','Soulstone','legendary','💚','Heal 4 HP on every kill',p=>{p.procs.onKillHeal+=4;});
+defItem('detonator','Detonation Core','rare','🧨','Kills have a chance to explode',p=>{p.procs.onKillExplode+=1;});
+defItem('chaincap','Chain Capacitor','rare','🔗','Hits chain lightning to nearby foes',p=>{p.procs.chainHit+=1;});
+defItem('orbblades','Orbital Blades','epic','🌀','Summons orbiting blades',p=>{p.procs.orbitBlades+=2;});
+defItem('vampedge','Vampiric Edge','rare','🩸','+9% lifesteal',p=>{p.lifesteal+=0.09;});
+defItem('hyperboots','Hyperloop Boots','uncommon','👟','+28% move speed',p=>{p.moveMul*=1.28;});
+defItem('nanoforge','Nano Forge','mythic','⚙️','+30% dmg, +20% rate, +8% crit',p=>{p.dmgMul*=1.3;p.fireRateMul*=1.2;p.crit=Math.min(0.95,p.crit+0.08);});
+defItem('singularity','Singularity Shard','ancient','🌌','+60% dmg, +1 projectile, kills explode',p=>{p.dmgMul*=1.6;p.projAdd+=1;p.procs.onKillExplode+=2;});
+defItem('berserkchip','Berserker Chip','epic','😡','+30% dmg & rate below 40% HP',p=>{p.berserk=true;p.dmgMul*=1.05;});
+defItem('titancore','Titan Core','legendary','🛡️','+120 HP, +8 armor',p=>{p.maxhp+=120;p.hp+=120;p.armor+=8;});
+defItem('reactorheart','Reactor Heart','epic','❤️‍🔥','+2.5 regen/s, +40 HP',p=>{p.regen+=2.5;p.maxhp+=40;p.hp+=40;});
+defItem('overclock','Overclock Module','rare','⚡','+22% fire rate',p=>{p.fireRateMul*=1.22;});
+defItem('railspike','Rail Spikes','rare','📌','+2 pierce',p=>{p.pierceAdd+=2;});
+defItem('splitcore','Split Core','epic','✳️','+1 projectile',p=>{p.projAdd+=1;});
+defItem('multicore','Multiplex Core','legendary','✴️','+2 projectiles',p=>{p.projAdd+=2;});
+defItem('critlens','Assassin Lens','epic','🎯','+12% crit, +50% crit dmg',p=>{p.crit=Math.min(0.95,p.crit+0.12);p.critDmg+=0.5;});
+defItem('bigboom','Ordnance Pack','uncommon','💣','+35% explosion radius',p=>{p.explodeMul*=1.35;});
+defItem('dronehive','Drone Hive','rare','🛰️','+40% drone damage',p=>{p.droneDmgMul*=1.4;});
+defItem('arcbattery','Arc Battery','rare','🔮','-22% ability cooldown',p=>{p.abilityCDmul=(p.abilityCDmul||1)*0.78;});
+defItem('voidcell','Void Cell','epic','🕳️','+35% ability power',p=>{p.abilityMul*=1.35;});
+defItem('phasecoil','Phase Coil','rare','💨','+1 dash charge',p=>{p.dashMax++;p.dashCharges++;});
+defItem('magcore','Magnetar','uncommon','🧲','+40% pickup range',p=>{p.pickupBonus+=0.4;});
+defItem('scholarchip','Scholar Chip','uncommon','📘','+25% XP gain',p=>{p.xpMul*=1.25;});
+defItem('luckydie','Loaded Dice','uncommon','🍀','+4 luck',p=>{p.luck+=4;});
+defItem('spikehull','Spiked Hull','uncommon','🌵','+12 thorns',p=>{p.thorns+=12;});
+defItem('aegis','Aegis Plate','rare','🪖','+6 armor, +30 HP',p=>{p.armor+=6;p.maxhp+=30;p.hp+=30;});
+defItem('velocity','Velocity Drive','common','🌠','+18% projectile speed',p=>{p.projSpeedMul*=1.18;});
+defItem('adrenal','Adrenal Surge','rare','🔥','+12% move & fire rate',p=>{p.moveMul*=1.12;p.fireRateMul*=1.12;});
+defItem('heavyrnd','Heavy Rounds','uncommon','🗡️','+20% dmg, -8% rate',p=>{p.dmgMul*=1.2;p.fireRateMul*=0.92;});
+defItem('secondwind','Second Wind','rare','🌬️','+2 regen, +35 HP',p=>{p.regen+=2;p.maxhp+=35;p.hp+=35;});
+defItem('predator','Predator Optics','epic','👁️','+9% crit, +20% dmg',p=>{p.crit=Math.min(0.95,p.crit+0.09);p.dmgMul*=1.2;});
+defItem('warpdrive','Warp Drive','epic','🌀','+1 dash, +18% move, dash i-frames',p=>{p.dashMax++;p.dashCharges++;p.moveMul*=1.18;p.dashInv=(p.dashInv||0)+0.12;});
+defItem('reaper','Reaper Protocol','legendary','☠️','Kills heal & may explode',p=>{p.procs.onKillHeal+=3;p.procs.onKillExplode+=1;});
+defItem('stormcell','Storm Cell','legendary','🌩️','Strong chain lightning on hit',p=>{p.procs.chainHit+=2;});
+defItem('bladestorm','Bladestorm','mythic','🌀','+4 orbiting blades',p=>{p.procs.orbitBlades+=4;});
+defItem('godcore','Omega Core','ancient','🔱','+50% dmg, +30% rate, +6 orbit blades',p=>{p.dmgMul*=1.5;p.fireRateMul*=1.3;p.procs.orbitBlades+=6;});
+defItem('bloodpact','Blood Pact','mythic','🧛','+15% lifesteal, +25% dmg, -25% HP',p=>{p.lifesteal+=0.15;p.dmgMul*=1.25;p.maxhp*=0.75;p.hp=Math.min(p.hp,p.maxhp);});
+defItem('fortress','Fortress Matrix','mythic','🏰','+150 HP, +12 armor, +15 thorns',p=>{p.maxhp+=150;p.hp+=150;p.armor+=12;p.thorns+=15;});
+defItem('quantumtether','Quantum Tether','legendary','🪢','+2 projectiles, +1 pierce, +15% rate',p=>{p.projAdd+=2;p.pierceAdd+=1;p.fireRateMul*=1.15;});
+defItem('infinitymag','Infinity Mag','ancient','♾️','+40% rate, +1 proj, -30% ability cd',p=>{p.fireRateMul*=1.4;p.projAdd+=1;p.abilityCDmul=(p.abilityCDmul||1)*0.7;});
+defItem('regenmatrix','Regen Matrix','epic','💗','+3 regen, heal on kill',p=>{p.regen+=3;p.procs.onKillHeal+=2;});
+defItem('powergrid','Power Grid','rare','🔌','+18% dmg, +10% ability power',p=>{p.dmgMul*=1.18;p.abilityMul*=1.1;});
+defItem('swiftkill','Swiftkill Engine','epic','🏹','+1 proj, +12% rate, +6% crit',p=>{p.projAdd+=1;p.fireRateMul*=1.12;p.crit=Math.min(0.95,p.crit+0.06);});
 
 /* ---- generated items to reach exactly 200 ---- */
 (function genItems(){
   const PRE=['Quantum','Neon','Void','Cyber','Plasma','Tesla','Nano','Chrono','Phantom','Hyper','Ion','Graviton','Photon','Vortex','Omega','Echo','Pulse','Razor','Titan','Hex','Aether','Glitch','Synth','Volt','Cryo','Pyro','Static','Flux','Helix','Zenith','Onyx','Halcyon','Specter','Karma','Drift'];
   const CORE=['Core','Chip','Matrix','Cell','Relay','Module','Engine','Driver','Node','Catalyst','Lens','Coil','Shard','Capacitor','Conduit','Array','Circuit','Reactor','Sigil','Codec','Protocol','Vector','Kernel','Beacon','Fragment','Prism','Servo','Injector','Membrane','Halo'];
-  const ICONS=['≡ƒöº','≡ƒö⌐','≡ƒÆá','≡ƒöå','≡ƒôí','≡ƒº¬','ΓÜù∩╕Å','≡ƒö¼','≡ƒ¢á∩╕Å','≡ƒº╖','≡ƒôƒ','≡ƒÄ¢∩╕Å','≡ƒ¬½','≡ƒöï','≡ƒÆ╛','≡ƒº½','≡ƒ¢░∩╕Å','ΓÜ¢∩╕Å','≡ƒîí∩╕Å','≡ƒº▓'];
+  const ICONS=['🔧','🔩','💠','🔆','📡','🧪','⚗️','🔬','🛠️','🧷','📟','🎛️','🪫','🔋','💾','🧫','🛰️','⚛️','🌡️','🧲'];
   const PAT=['common','common','common','uncommon','common','uncommon','common','rare','common','uncommon','common','common','rare','uncommon','epic','common','uncommon','rare','common','legendary','common','uncommon','common','rare','epic','common','uncommon','common','mythic','common','rare','uncommon','common','epic','common','uncommon','rare','common','ancient','uncommon'];
   const TPL=[
     {d:s=>'+'+(6*s)+'% damage',f:(p,s)=>{p.dmgMul*=1+0.06*s;}},
@@ -2960,9 +2956,9 @@ function toggleInventory(){
   el.querySelector('#invSub').innerHTML='Run items: '+Object.keys(P.items||{}).length+' kinds &middot; Discovered all-time: <b style="color:var(--cyan)">'+disc+' / '+ITEMS.length+'</b>';
   const order={};ITEMS.forEach(it=>order[it.id]=it);
   const keys=Object.keys(P.items||{}).sort((a,b)=>ridx(order[b].rar)-ridx(order[a].rar));
-  if(!keys.length)grid.innerHTML='<div style="opacity:.6;padding:14px">No items yet ΓÇö kill elites & bosses to find them.</div>';
+  if(!keys.length)grid.innerHTML='<div style="opacity:.6;padding:14px">No items yet — kill elites & bosses to find them.</div>';
   keys.forEach(id=>{const it=order[id];const n=P.items[id];const d=document.createElement('div');d.className='shopitem';d.style.cursor='default';d.style.borderColor=ITEM_RAR[it.rar].c;
-    d.innerHTML='<div style="font-size:20px">'+it.icon+'</div><div style="font-weight:800;color:'+ITEM_RAR[it.rar].c+'">'+it.name+(n>1?' ├ù'+n:'')+'</div>'+
+    d.innerHTML='<div style="font-size:20px">'+it.icon+'</div><div style="font-weight:800;color:'+ITEM_RAR[it.rar].c+'">'+it.name+(n>1?' ×'+n:'')+'</div>'+
       '<div style="font-size:10px;opacity:.55;letter-spacing:1px">'+ITEM_RAR[it.rar].n+'</div><div style="font-size:11px;opacity:.8">'+it.desc+'</div>';
     grid.appendChild(d);});
   el.style.display='flex';
@@ -2988,5 +2984,6 @@ Object.assign(window,{
 
 startEngine();
 </script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </body>
 </html>
