@@ -395,7 +395,7 @@ body.embedded #pause,
 body.embedded #gameover{display:none !important}
 
 </style>
-
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
 </head>
 <body>
 <div id="scanlines"></div>
@@ -3017,99 +3017,16 @@ function injectUI(){
   }
 }
 /* ======================= GLB MODEL LOADER =======================
-   Parses binary glTF (.glb), merges each model's nodes into one mesh
-   (applying node transforms), normalizes to a unit cube, and uploads
-   via R.makeMesh. Runs async after R.init — primitives render until a
-   model finishes loading, then R.meshes[key] exists and draw switches. */
-const GLB_CT={5120:Int8Array,5121:Uint8Array,5122:Int16Array,5123:Uint16Array,5125:Uint32Array,5126:Float32Array};
-const GLB_NC={SCALAR:1,VEC2:2,VEC3:3,VEC4:4,MAT4:16};
-function glbParse(buf){
-  const u8=new Uint8Array(buf),dv=new DataView(buf);
-  if(dv.getUint32(0,true)!==0x46546C67)throw new Error('not glb');
-  let off=12,json=null,bin=null;
-  while(off<u8.byteLength){const clen=dv.getUint32(off,true),ctype=dv.getUint32(off+4,true);off+=8;
-    if(ctype===0x4E4F534A)json=JSON.parse(new TextDecoder().decode(u8.subarray(off,off+clen)));
-    else if(ctype===0x004E4942)bin=u8.subarray(off,off+clen);
-    off+=clen;}
-  return {json,bin};
-}
-function glbAcc(json,bin,idx){
-  const a=json.accessors[idx],bv=json.bufferViews[a.bufferView];
-  const TA=GLB_CT[a.componentType],nc=GLB_NC[a.type];
-  const bo=(bv.byteOffset||0)+(a.byteOffset||0),stride=bv.byteStride||0,out=new Float32Array(a.count*nc);
-  if(!stride||stride===nc*TA.BYTES_PER_ELEMENT){const src=new TA(bin.buffer,bin.byteOffset+bo,a.count*nc);for(let i=0;i<out.length;i++)out[i]=src[i];}
-  else{for(let i=0;i<a.count;i++){const base=bin.byteOffset+bo+i*stride,src=new TA(bin.buffer,base,nc);for(let j=0;j<nc;j++)out[i*nc+j]=src[j];}}
-  return out;
-}
-function glbMat(n){
-  if(n.matrix)return n.matrix;
-  const t=n.translation||[0,0,0],r=n.rotation||[0,0,0,1],s=n.scale||[1,1,1];
-  const x=r[0],y=r[1],z=r[2],w=r[3],x2=x+x,y2=y+y,z2=z+z;
-  const xx=x*x2,xy=x*y2,xz=x*z2,yy=y*y2,yz=y*z2,zz=z*z2,wx=w*x2,wy=w*y2,wz=w*z2;
-  return [(1-(yy+zz))*s[0],(xy+wz)*s[0],(xz-wy)*s[0],0, (xy-wz)*s[1],(1-(xx+zz))*s[1],(yz+wx)*s[1],0, (xz+wy)*s[2],(yz-wx)*s[2],(1-(xx+yy))*s[2],0, t[0],t[1],t[2],1];
-}
-// Normals must transform by the inverse-transpose of the 3x3 part, not the
-// matrix itself — several sub-parts in these models (wings, barrels, spikes)
-// have non-uniform scale, and using the plain matrix skews their normals,
-// breaking lighting on exactly those parts (looks dark/wrong, not just
-// "not the real model"). Skip the 1/det scale since the result gets
-// renormalized anyway; keep sign(det) so mirrored (negative-scale) parts
-// don't end up with inverted normals.
-function glbNormalMat3(M){
-  const a=M[0],d=M[1],g=M[2], b=M[4],e=M[5],h=M[6], c=M[8],f=M[9],i=M[10];
-  const C00=e*i-f*h, C01=-(d*i-f*g), C02=d*h-e*g;
-  const C10=-(b*i-c*h), C11=a*i-c*g, C12=-(a*h-b*g);
-  const C20=b*f-c*e, C21=-(a*f-c*d), C22=a*e-b*d;
-  const det=a*C00+b*C10+c*C20;
-  const sgn=det<0?-1:1;
-  return [C00*sgn,C01*sgn,C02*sgn, C10*sgn,C11*sgn,C12*sgn, C20*sgn,C21*sgn,C22*sgn];
-}
-function glbExtract(json,bin,re){
-  const V=[],N=[],I=[];let base=0;
-  (json.nodes||[]).forEach(node=>{
-    if(node.mesh==null||!re.test(node.name||''))return;
-    const M=glbMat(node),NM=glbNormalMat3(M),mesh=json.meshes[node.mesh];
-    (mesh.primitives||[]).forEach(pr=>{
-      if(!pr.attributes||pr.attributes.POSITION==null)return;
-      const pos=glbAcc(json,bin,pr.attributes.POSITION);
-      const nrm=pr.attributes.NORMAL!=null?glbAcc(json,bin,pr.attributes.NORMAL):null;
-      const nv=pos.length/3;
-      for(let i=0;i<nv;i++){
-        const px=pos[i*3],py=pos[i*3+1],pz=pos[i*3+2];
-        V.push(M[0]*px+M[4]*py+M[8]*pz+M[12],M[1]*px+M[5]*py+M[9]*pz+M[13],M[2]*px+M[6]*py+M[10]*pz+M[14]);
-        if(nrm){const nx=nrm[i*3],ny=nrm[i*3+1],nz=nrm[i*3+2];let ax=NM[0]*nx+NM[1]*ny+NM[2]*nz,ay=NM[3]*nx+NM[4]*ny+NM[5]*nz,az=NM[6]*nx+NM[7]*ny+NM[8]*nz;const l=Math.hypot(ax,ay,az)||1;N.push(ax/l,ay/l,az/l);}
-        else N.push(0,1,0);
-      }
-      if(pr.indices!=null){const id=glbAcc(json,bin,pr.indices);for(let i=0;i<id.length;i++)I.push(base+id[i]);}
-      else for(let i=0;i<nv;i++)I.push(base+i);
-      base+=nv;
-    });
-  });
-  if(!V.length)return null;
-  let mnx=1e9,mny=1e9,mnz=1e9,mxx=-1e9,mxy=-1e9,mxz=-1e9;
-  for(let i=0;i<V.length;i+=3){if(V[i]<mnx)mnx=V[i];if(V[i]>mxx)mxx=V[i];if(V[i+1]<mny)mny=V[i+1];if(V[i+1]>mxy)mxy=V[i+1];if(V[i+2]<mnz)mnz=V[i+2];if(V[i+2]>mxz)mxz=V[i+2];}
-  const cx=(mnx+mxx)/2,cy=(mny+mxy)/2,cz=(mnz+mxz)/2,ext=Math.max(mxx-mnx,mxy-mny,mxz-mnz)||1,sc=1/ext;
-  for(let i=0;i<V.length;i+=3){V[i]=(V[i]-cx)*sc;V[i+1]=(V[i+1]-cy)*sc;V[i+2]=(V[i+2]-cz)*sc;}
-  return {verts:V,norms:N,idx:I};
-}
-const GLB_JOBS=[
-  {file:'player_ship',items:[['player_ship',/./,16]]},
-  {file:'enemies',items:[['enemy_grunt',/Grunt/i,600],['enemy_fast',/Fast/i,600],['enemy_tank',/Tank/i,600],['enemy_exploder',/Exploder/i,600],['enemy_shooter',/Shooter/i,600],['enemy_sniper',/Sniper/i,600],['enemy_drone',/Drone/i,600]]},
-  {file:'bosses',items:[['boss_titan',/Titan/i,8],['boss_voidcore',/VoidCore/i,8],['boss_hydra',/Hydra/i,8],['boss_overseer',/Overseer/i,8],['boss_omega',/Omega/i,8]]},
-];
-function loadGLBModels(){
-  if(!R.gl)return;
-  GLB_JOBS.forEach(job=>{
-    fetch('assets/neon_survivor/'+job.file+'.glb').then(r=>{if(!r.ok)throw new Error(r.status);return r.arrayBuffer();}).then(buf=>{
-      const p=glbParse(buf);
-      job.items.forEach(([key,re,cap])=>{try{const m=glbExtract(p.json,p.bin,re);if(m)R.loadModel(key,m.verts,m.norms,m.idx,cap);}catch(e){console.error('glb '+key,e);}});
-    }).catch(e=>console.error('glb load '+job.file,e));
-  });
-}
+   Actual parsing/extraction now lives in a <script type="module"> block
+   near the end of <body> that uses Three.js's GLTFLoader — see the note
+   there for why. That module script runs after this classic script has
+   finished (module scripts are deferred by spec), so window.R already
+   exists with R.gl initialized by the time it runs. It calls
+   R.loadModel(key, verts, norms, idx, cap) directly; primitives render
+   until each model finishes loading. */
 
 function startEngine(){
   try{R.init();}catch(e){console.warn('WebGL2 fallback renderer unavailable',e);}
-  try{loadGLBModels();}catch(e){console.error('loadGLBModels',e);}
   FX.init();
   if(typeof setupInput==='function')setupInput();
   buildModeButtons();wireUI();injectUI();refreshMetaUI();
@@ -3360,6 +3277,77 @@ Object.assign(window,{
 
 try{ startEngine(); }
 catch(e){ console.error('startEngine() error:',e); showErrBanner('boot: '+(e&&e.message||e)); }
+</script>
+
+<script type="module">
+/* ======================= GLB MODEL LOADING (Three.js GLTFLoader) =======================
+   A prior hand-rolled binary glTF parser was replaced with Three.js's own
+   GLTFLoader — it's the industry-standard, battle-tested implementation
+   that correctly handles every accessor type/stride, quaternion/TRS
+   composition, and normal-matrix math that a custom parser can easily get
+   subtly wrong. This module is used ONLY to parse and extract world-space
+   geometry; the actual instanced WebGL2 rendering (camera, ground, bloom,
+   primitives) stays on the existing R renderer, which is proven working —
+   no dual-canvas/dual-camera setup like the earlier abandoned attempt.
+
+   Module scripts execute after all classic scripts finish (per spec), so
+   window.R already exists with R.gl initialized by the time this runs. */
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+const GLB_JOBS=[
+  {file:'player_ship',items:[['player_ship',/./,16]]},
+  {file:'enemies',items:[['enemy_grunt',/Grunt/i,600],['enemy_fast',/Fast/i,600],['enemy_tank',/Tank/i,600],['enemy_exploder',/Exploder/i,600],['enemy_shooter',/Shooter/i,600],['enemy_sniper',/Sniper/i,600],['enemy_drone',/Drone/i,600]]},
+  {file:'bosses',items:[['boss_titan',/Titan/i,8],['boss_voidcore',/VoidCore/i,8],['boss_hydra',/Hydra/i,8],['boss_overseer',/Overseer/i,8],['boss_omega',/Omega/i,8]]},
+];
+
+function extractMerged(scene,re){
+  scene.updateMatrixWorld(true);
+  const V=[],N=[],I=[];let base=0;
+  const nMat=new THREE.Matrix3();
+  const v=new THREE.Vector3(),n=new THREE.Vector3();
+  scene.traverse(obj=>{
+    if(!obj.isMesh||!re.test(obj.name||''))return;
+    const geo=obj.geometry;
+    const pos=geo.attributes.position,nrm=geo.attributes.normal,idx=geo.index;
+    if(!pos)return;
+    nMat.getNormalMatrix(obj.matrixWorld);
+    const nv=pos.count;
+    for(let i=0;i<nv;i++){
+      v.fromBufferAttribute(pos,i).applyMatrix4(obj.matrixWorld);
+      V.push(v.x,v.y,v.z);
+      if(nrm){n.fromBufferAttribute(nrm,i).applyMatrix3(nMat).normalize();N.push(n.x,n.y,n.z);}
+      else N.push(0,1,0);
+    }
+    if(idx){for(let i=0;i<idx.count;i++)I.push(base+idx.getX(i));}
+    else{for(let i=0;i<nv;i++)I.push(base+i);}
+    base+=nv;
+  });
+  if(!V.length)return null;
+  let mnx=1e9,mny=1e9,mnz=1e9,mxx=-1e9,mxy=-1e9,mxz=-1e9;
+  for(let i=0;i<V.length;i+=3){if(V[i]<mnx)mnx=V[i];if(V[i]>mxx)mxx=V[i];if(V[i+1]<mny)mny=V[i+1];if(V[i+1]>mxy)mxy=V[i+1];if(V[i+2]<mnz)mnz=V[i+2];if(V[i+2]>mxz)mxz=V[i+2];}
+  const cx=(mnx+mxx)/2,cy=(mny+mxy)/2,cz=(mnz+mxz)/2,ext=Math.max(mxx-mnx,mxy-mny,mxz-mnz)||1,sc=1/ext;
+  for(let i=0;i<V.length;i+=3){V[i]=(V[i]-cx)*sc;V[i+1]=(V[i+1]-cy)*sc;V[i+2]=(V[i+2]-cz)*sc;}
+  return {verts:V,norms:N,idx:I};
+}
+
+async function loadGLBModelsThree(){
+  const R=window.R;
+  if(!R||!R.gl){console.warn('R not ready — skipping GLB load');return;}
+  const loader=new GLTFLoader();
+  for(const job of GLB_JOBS){
+    try{
+      const gltf=await loader.loadAsync('assets/neon_survivor/'+job.file+'.glb');
+      for(const [key,re,cap] of job.items){
+        try{
+          const m=extractMerged(gltf.scene,re);
+          if(m)R.loadModel(key,m.verts,m.norms,m.idx,cap);
+        }catch(e){console.error('glb extract '+key,e);if(window.showErrBanner)window.showErrBanner('glb '+key+': '+(e&&e.message||e));}
+      }
+    }catch(e){console.error('glb load '+job.file,e);if(window.showErrBanner)window.showErrBanner('glb load '+job.file+': '+(e&&e.message||e));}
+  }
+}
+loadGLBModelsThree();
 </script>
 </body>
 </html>
