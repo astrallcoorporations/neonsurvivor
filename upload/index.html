@@ -357,6 +357,8 @@ const lerp=(a,b,t)=>a+(b-a)*t;
 const dist2=(ax,az,bx,bz)=>{const dx=ax-bx,dz=az-bz;return dx*dx+dz*dz;};
 const now=()=>performance.now();
 const pick=arr=>arr[randi(0,arr.length-1)];
+// Camera configuration: tweak these to zoom in/out or change field of view at runtime
+const CAM = { forward: 560, height: 820, fov: 48 };
 
 // master game object
 const G = {
@@ -625,12 +627,19 @@ const R={
   },
   setCam(px,pz,shakeX,shakeZ){
     this.cam.tx=px;this.cam.tz=pz;
-    const ex=px+shakeX, ez=pz+560+shakeZ, ey=820;
-    M4.perspective(this.proj,48*Math.PI/180,this.W/this.H,10,7000);
-    M4.lookAt(this.view,ex,ey,ez, px+shakeX*0.5,0,pz, 0,1,0);
-    M4.mul(this.vp,this.proj,this.view);M4.invert(this.invVP,this.vp);
-    this.cam.x=ex;this.cam.y=ey;this.cam.z=ez;
+    // Use configurable camera values from global CAM. Fall back to previous defaults if undefined.
+    const forward = (window.CAM && typeof CAM.forward === 'number') ? CAM.forward : 560;
+    const height = (window.CAM && typeof CAM.height === 'number') ? CAM.height : 820;
+    const fovDeg = (window.CAM && typeof CAM.fov === 'number') ? CAM.fov : 48;
+    const ex = px + (shakeX||0);
+    const ez = pz + forward + (shakeZ||0);
+    const ey = height;
+    M4.perspective(this.proj, fovDeg*Math.PI/180, this.W/this.H, 10, 7000);
+    M4.lookAt(this.view, ex, ey, ez, px + (shakeX||0)*0.5, 0, pz, 0, 1, 0);
+    M4.mul(this.vp, this.proj, this.view); M4.invert(this.invVP, this.vp);
+    this.cam.x = ex; this.cam.y = ey; this.cam.z = ez;
   },
+
   // screen(px) -> ground world (y=0)
   screenToGround(sx,sy){
     const ndcx=(sx/innerWidth)*2-1, ndcy=1-(sy/innerHeight)*2;
@@ -676,8 +685,9 @@ const R={
     gl.useProgram(this.progMesh);
     gl.uniformMatrix4fv(this.progMesh.u.uView,false,this.view);
     gl.uniformMatrix4fv(this.progMesh.u.uProj,false,this.proj);
-    gl.uniform3f(this.progMesh.u.uLight,0.4,1.0,0.5);
-    gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
+    gl.uniform3f(this.progMesh.u.uLight,0.6,1.2,0.6);
+    // Render meshes opaque for crisp, non-transparent models
+    gl.disable(gl.BLEND);
     for(const k in this.meshes){const m=this.meshes[k];if(!m.n)continue;
       gl.bindVertexArray(m.vao);gl.bindBuffer(gl.ARRAY_BUFFER,m.inst);
       gl.bufferSubData(gl.ARRAY_BUFFER,0,m.arr.subarray(0,m.n*11));
@@ -702,7 +712,7 @@ const R={
     // bright pass -> half res
     gl.bindFramebuffer(gl.FRAMEBUFFER,this.fbBright);gl.viewport(0,0,this.hw,this.hh);
     gl.useProgram(this.progBright);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,this.texScene);
-    gl.uniform1i(this.progBright.u.uTex,0);gl.uniform1f(this.progBright.u.uThresh,0.62);
+    gl.uniform1i(this.progBright.u.uTex,0);gl.uniform1f(this.progBright.u.uThresh,0.70);
     this.drawFS();
     // blur ping-pong
     let src=this.texBright;
@@ -720,7 +730,7 @@ const R={
     gl.useProgram(this.progComp);
     gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,this.texScene);gl.uniform1i(this.progComp.u.uScene,0);
     gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,this.texB);gl.uniform1i(this.progComp.u.uBloom,1);
-    gl.uniform1f(this.progComp.u.uIntensity,1.25);
+    gl.uniform1f(this.progComp.u.uIntensity,0.95);
     this.drawFS();
   }
 };
@@ -745,10 +755,15 @@ const FS_MESH=`#version 300 es
 precision highp float;
 in vec3 vN; in vec4 vC; in float vEm; uniform vec3 uLight; out vec4 frag;
 void main(){
+  // stronger diffuse, reduced ambient to give crisper shading
   float d=max(dot(normalize(vN),normalize(uLight)),0.0);
-  float light=0.34+0.66*d;
-  vec3 col=vC.rgb*light + vC.rgb*vEm;
-  frag=vec4(col,1.0);
+  float light=0.15+0.85*d;
+  // clamp emissive and apply a reduced multiplier so emissive highlights are controlled
+  float em = clamp(vEm, 0.0, 2.0) * 0.35;
+  vec3 col = vC.rgb * (light + em);
+  // slight saturation boost and gentle gamma for clarity
+  col = pow(col * 1.03, vec3(0.97));
+  frag = vec4(col, 1.0);
 }`;
 const VS_FS=`#version 300 es
 out vec2 vUv;
@@ -789,8 +804,9 @@ const FS_COMP=`#version 300 es
 precision highp float; in vec2 vUv; uniform sampler2D uScene; uniform sampler2D uBloom; uniform float uIntensity; out vec4 frag;
 void main(){ vec3 c=texture(uScene,vUv).rgb; vec3 b=texture(uBloom,vUv).rgb;
   vec3 col=c+b*uIntensity;
-  col=col/(col+vec3(0.9)); // tonemap
-  col=pow(col,vec3(0.85));
+  // gentler shoulder tonemap to preserve highlights while keeping contrast
+  col=col/(col+vec3(0.8)); // tonemap
+  col=pow(col,vec3(0.92));
   frag=vec4(col,1.0); }`;
 
 /* The ground is actually drawn as real 3D geometry (a big grid plane). We replace the
